@@ -11,7 +11,7 @@
                 </div>
                 <div class="panel-container show">
                     <div class="panel-content">
-                        <form action="{{url('admin/'.$name)}}" method="POST" enctype="multipart/form-data">
+                        <form action="{{route('bpadmin.'.$name.'.store')}}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @include('bpadmin::components.create',[
                                 'fields'    =>  $fields,

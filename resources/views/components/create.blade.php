@@ -1,18 +1,25 @@
 
 @foreach($fields as $key => $value)
-    @if($value !== 'boolean')
+    @if($value['type'] !== 'boolean')
         <div class="form-group">
             <label for="{{$key}}" class="form-label">{{trans($name.'.'.$key)}}</label>
-            @if($value === 'select')
-                @include('bpadmin::components.inputs.'.$value,[
-                    'name'  =>  $key,
-                    'value' =>  array_key_exists('choose',$options) && array_key_exists($key,$options['choose'])?$options['choose'][$key]:old($key),
-                    'items' =>  $options[$key],
-                    ])
+            @if($key === 'email')
+                @include('bpadmin::components.inputs.email',[
+                   'name'  =>  $key,
+                   'value' =>  old($key),
+                   'required' => $value['required'],
+                   ])
+            @elseif($key === 'password')
+                @include('bpadmin::components.inputs.password',[
+                'name'  =>  $key,
+                'value' =>  old($key),
+                'required' => $value['required'],
+                ])
             @else
-                @include('bpadmin::components.inputs.'.$value,[
+                @include('bpadmin::components.inputs.'.$value['type'],[
                     'name'  =>  $key,
                     'value' =>  old($key),
+                    'required' => $value['required'],
                     ])
             @endif
             @error($key)
@@ -24,7 +31,7 @@
     @else
         <div class="form-group">
             <div class="custom-control custom-checkbox">
-                @include('bpadmin::components.inputs.'.$value,[
+                @include('bpadmin::components.inputs.'.$value['type'],[
                     'name'  =>  $key,
                     'value' =>  null,
                     ])

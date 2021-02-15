@@ -1,7 +1,7 @@
 <?php
 
 
-namespace BlackParadise\Admin\CRUD\Http\Controllers;
+namespace BlackParadise\LaravelAdmin\Http\Controllers;
 
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;

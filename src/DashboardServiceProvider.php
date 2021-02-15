@@ -1,14 +1,15 @@
 <?php
 
 
-namespace BlackParadise\Admin;
+namespace BlackParadise\LaravelAdmin;
 
+use BlackParadise\LaravelAdmin\Http\Middleware\EntityExistMiddleware;
 use Illuminate\Support\ServiceProvider;
-use PackageVersions\Versions;
 use Illuminate\Contracts\Http\Kernel;
 use  Illuminate\View\Middleware\ShareErrorsFromSession;
+use Illuminate\Routing\Router;
 
-class DashboardServiceProvider
+class DashboardServiceProvider extends ServiceProvider
 {
     protected $configPath = 'bpadmin';
     /**
@@ -16,15 +17,18 @@ class DashboardServiceProvider
      */
     public function boot()
     {
-        $this->loadViewsFrom(__DIR__ . './resources/views', $this->configPath);
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', $this->configPath);
 
         $this->registerPublishes();
 
         $this->registerCommands();
 
         $this->loadTranslations();
+        //web routes
+        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
-        $this->loadRoutesFrom(__DIR__ . './routes/');
+        $router = $this->app->make(Router::class);
+        $router->aliasMiddleware('exists', EntityExistMiddleware::class);
     }
 
     /**
@@ -33,7 +37,7 @@ class DashboardServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
-            __DIR__ . './config/dashboard.php',
+            __DIR__ . '/../config/dashboard.php',
             $this->configPath
         );
     }
@@ -56,15 +60,15 @@ class DashboardServiceProvider
     protected function registerPublishes()
     {
         $this->publishes([
-            __DIR__ . './resources/views' => resource_path('views/vendor/bpadmin'),
-            __DIR__ . './public' => public_path('bpadmin'),
-            __DIR__ . './config' => config_path('bpadmin'),
-            __DIR__ . './resources/lang' => resource_path('lang/vendor/bpadmin'),
+            __DIR__ . '/../resources/views' => resource_path('views/vendor/bpadmin'),
+            __DIR__ . '/../public' => public_path('bpadmin'),
+            __DIR__ . '/../config' => config_path('bpadmin'),
+            __DIR__ . '/../resources/lang' => resource_path('lang/vendor/bpadmin'),
         ], 'bpadmin::all');
 
         $this->publishes([
-            __DIR__ . './public' => public_path('bpadmin'),
-            __DIR__ . './config' => config_path('bpadmin'),
+            __DIR__ . '/../public' => public_path('bpadmin'),
+            __DIR__ . '/../config' => config_path('bpadmin'),
         ], 'bpadmin::min');
     }
 

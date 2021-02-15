@@ -1,7 +1,7 @@
 <?php
 
 
-namespace BlackParadise\Admin\Core;
+namespace BlackParadise\LaravelAdmin\Core;
 
 use Illuminate\Http\Request;
 

@@ -1,33 +1,39 @@
 <?php
 
+namespace BlackParadise\LaravelAdmin\Core;
 
-namespace BlackParadise\Admin\Core;
-
-
+use Doctrine\DBAL\Schema\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 
 class DashboardPresenter
 {
-    public function getTablePage(
-        array $headers,
-        string $name,
-        LengthAwarePaginator $items,
-        bool $withoutToolbar = false,
-        array $options = [],
-        bool $withoutCreate = false,
-        bool $withoutShow = false
-        )
+    public function getTablePage(string $name, Request $request)
     {
-        return view('bpadmin::components.table-page',[
-            'headers'   =>  $headers,
-            'name'      =>  $name,
-            'items'     =>  $items,
-            'withoutToolbar'    =>  $withoutToolbar,
-            'options'           =>  $options,
-            'withoutCreate'     =>  $withoutCreate,
-            'withoutShow'       =>  $withoutShow
-        ]);
+        $entityArray = config('bpadmin.entities')[$name];
+        if($entityArray['type'] === 'default') {
+            $withoutToolbar = false;
+            $options = [];
+            $withoutCreate = false;
+            $withoutShow = false;
+            $data = $request->all(['perPage']);
+            $data['perPage'] = array_key_exists('paginate',$entityArray)?
+                $entityArray['paginate']
+                :
+                10;
+            $items = (new AbstractRepo($entityArray['entity']))->search($data);
+            return view('bpadmin::components.table-page',[
+                'headers'   =>  $entityArray['table_headers'],
+                'name'      =>  $name,
+                'items'     =>  $items,
+                'withoutToolbar'    =>  $withoutToolbar,
+                'options'           =>  $options,
+                'withoutCreate'     =>  $withoutCreate,
+                'withoutShow'       =>  $withoutShow
+            ]);
+        } else {
+            dd('not-default');
+        }
     }
 
     public function getShowPage(string $header, Model $item, string $name, array $relation =[])
@@ -42,13 +48,29 @@ class DashboardPresenter
         ]);
     }
 
-    public function getCreatePage(array $fields,string $name, array $options = [])
+    public function getCreatePage(string $name)
     {
-        return view('bpadmin::components.create-page',[
-            'fields'    =>  $fields,
-            'name'      =>  $name,
-            'options'   =>  $options,
-        ]);
+        $entityArray = config('bpadmin.entities')[$name];
+        if($entityArray['type'] === 'default') {
+            $options = array_key_exists('options',$entityArray) ?
+                $entityArray['options']
+                :
+                [];
+            $model = app($entityArray['entity']);
+            $columns = (new TypeFromTable())->getTypeList($model);
+            $fields = [];
+            foreach ($model->getFillable() as $modelType) {
+                $fields[$modelType] = $columns[$modelType];
+            }
+            return view('bpadmin::components.create-page',[
+                'fields'    =>  $fields,
+                'name'      =>  $name,
+                'options'   =>  $options,
+            ]);
+        } else {
+            dd('not-default');
+        }
+
     }
 
     public function getEditPage(Model $model,string $name,array $fields, array $options = [])
