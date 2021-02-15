@@ -1,0 +1,21 @@
+{
+  "name": "black-paradise/laravel-admin",
+  "description": "Generate Admin Panel for Laravel",
+  "type": "project",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Vladuslav Manzhos",
+      "email": "loverider2012@gmail.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "laravel/framework": "^6.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "BlackParadise\\LaravelAdmin\\": "src/"
+    }
+  }
+}
