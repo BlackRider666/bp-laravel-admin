@@ -1,8 +1,8 @@
 <table class="table table-clean m-2">
     <tbody>
-    @foreach($item as $key => $value)
+    @foreach($fields as $key => $value)
         <tr>
-            <th>{{$fields[$key]}}</th>
+            <th>{{trans('bpadmin::'.$name.'.'.$key)}}</th>
             @if($key === 'thumb_url')
                <td>
                    <img src="{{$value}}" alt="{{$key}}" class="img-thumbnail col-6">
@@ -12,7 +12,12 @@
                     <input type="color" value="{{$value}}" disabled>
                 </td>
             @else
-            <td>{{array_key_exists($key,$relation)?$relation[$key]:$value}}</td>
+                @if(array_key_exists('relation',$value))
+                    <?php $method = substr($key,0,-3)?>
+                    <td>{{$item->$method->relation_title}}</td>
+                @else
+                    <td>{{$item->$key}}</td>
+                @endif
             @endif
         </tr>
     @endforeach

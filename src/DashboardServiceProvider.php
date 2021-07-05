@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Http\Kernel;
 use  Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Routing\Router;
+use BlackParadise\LaravelAdmin\Console\GenerateTranslation;
 
 class DashboardServiceProvider extends ServiceProvider
 {
@@ -49,7 +50,7 @@ class DashboardServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                //
+                GenerateTranslation::class,
             ]);
         }
     }

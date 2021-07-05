@@ -4,7 +4,11 @@
 namespace BlackParadise\LaravelAdmin\Core;
 
 
+use ErrorException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use ReflectionClass;
+use ReflectionMethod;
 
 class TypeFromTable
 {
@@ -60,6 +64,21 @@ class TypeFromTable
                 'required'  =>  $column->getNotnull(),
             ];
         }
-        return $typeList;
+        $reflector = new ReflectionClass($model);
+        foreach ($reflector->getMethods() as $reflectionMethod) {
+            $returnType = $reflectionMethod->getReturnType();
+            if ($returnType) {
+                if (in_array(class_basename($returnType->getName()), ['BelongsTo', 'BelongsToMany'])) {
+                    $relName = $reflectionMethod->getName();
+                    $modelRel = (new $reflectionMethod->class())->$relName()->getRelated();
+                    $typeList[$reflectionMethod->getName().'_id']['relation'] = $modelRel->forSelect();
+                }
+            }
+        }
+        $fields = [];
+        foreach ($model->getFillable() as $modelType) {
+            $fields[$modelType] = $typeList[$modelType];
+        }
+        return $fields;
     }
 }

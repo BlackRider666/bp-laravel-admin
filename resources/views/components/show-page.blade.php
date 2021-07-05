@@ -10,7 +10,11 @@
                     </h2>
                 </div>
                 <div class="panel-container show">
-                    @include('bpadmin::components.show',$data)
+                    @include('bpadmin::components.show',[
+                        'name'  =>  $name,
+                        'item' => $item,
+                        'fields' => $fields,
+                    ])
                 </div>
             </div>
 

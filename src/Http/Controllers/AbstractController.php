@@ -2,43 +2,49 @@
 
 namespace BlackParadise\LaravelAdmin\Http\Controllers;
 
+use BlackParadise\LaravelAdmin\Core\TypeFromTable;
 use BlackParadise\LaravelAdmin\Core\ValidationManager;
 use BlackParadise\LaravelAdmin\Core\DashboardPresenter;
 use BlackParadise\LaravelAdmin\Http\Controllers\Controller;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AbstractController extends Controller
 {
     /**
+     * @param Model $model
      * @param Request $request
      * @return Application|Factory|View
      */
-    public function index(Request $request)
+    public function index(Model $model, Request $request)
     {
-        return (new DashboardPresenter())->getTablePage(request()->get('entity_name'), $request);
+        return (new DashboardPresenter())->getTablePage($request->get('entity_name'), $request);
     }
 
     /**
+     * @param Model $model
+     * @param Request $request
      * @return Application|Factory|View
      */
-    public function create()
+    public function create(Model $model, Request $request)
     {
-        return (new DashboardPresenter())->getCreatePage(request()->get('entity_name'));
+        return (new DashboardPresenter())->getCreatePage($request->get('entity_name'), $model);
     }
 
-    public function store(Request $request)
+    public function store(Model $model, Request $request)
     {
         $name = $request->get('entity_name');
         if(config('bpadmin.entities')[$name]['validation_type'] === 'default') {
+            $vars = (new TypeFromTable())->getTypeList($model);
             $data = (new ValidationManager)->validate(
-                config('bpadmin.entities')[$name]['variables'],
+                $vars,
                 $request,
                 $name
             );
-            config('bpadmin.entities')[$name]['entity']::create($data);
+            $model::create($data);
             return redirect('/admin/'.$name);
         } else {
             $data = $request->validate(config('bpadmin.entities')[$name]['store_rules']);
@@ -47,14 +53,13 @@ class AbstractController extends Controller
         }
     }
 
-    public function show(int $id)
+    public function show(Model $model)
     {
         $name = request()->get('entity_name');
         if(config('bpadmin.entities')[$name]['type'] === 'default') {
-            $entity = config('bpadmin.entities')[$name]['entity']::find($id);
             return (new DashboardPresenter())->getShowPage(
                 config('bpadmin.entities')[$name]['show_title'],
-                $entity,
+                $model,
                 $name
             );
         } else {
@@ -62,15 +67,15 @@ class AbstractController extends Controller
         }
     }
 
-    public function edit(int $id)
+    public function edit(Model $model)
     {
         $name = request()->get('entity_name');
         if(config('bpadmin.entities')[$name]['type'] === 'default') {
-            $entity = config('bpadmin.entities')[$name]['entity']::find($id);
+            $vars = (new TypeFromTable())->getTypeList($model);
             return (new DashboardPresenter())->getEditPage(
-                $entity,
+                $model,
                 $name,
-                config('bpadmin.entities')[$name]['variables'],
+                $vars,
                 array_key_exists('options',config('bpadmin.entities')[$name]) ?
                     config('bpadmin.entities')[$name]['options']
                     :
@@ -81,18 +86,18 @@ class AbstractController extends Controller
         }
     }
 
-    public function update(int $id, Request $request)
+    public function update(Model $model, Request $request)
     {
         $name = $request->get('entity_name');
         if(config('bpadmin.entities')[$name]['validation_type'] === 'default') {
-            $entity = config('bpadmin.entities')[$name]['entity']::find($id);
+            $vars = (new TypeFromTable())->getTypeList($model);
             $data = (new ValidationManager)->validate(
-                config('bpadmin.entities')[$name]['variables'],
+                $vars,
                 $request,
                 $name,
-                $entity->toArray()
+                $model->toArray()
             );
-            $entity->update($data);
+            $model->update($data);
             return redirect('/admin/'.$name);
         } else {
             $data = $request->validate(config('bpadmin.entities')[$name]['update_rules']);
@@ -101,11 +106,11 @@ class AbstractController extends Controller
         }
     }
 
-    public function destroy(int $id)
+    public function destroy(Model $model)
     {
         $name = request()->get('entity_name');
         if(config('bpadmin.entities')[$name]['type'] === 'default') {
-            $entities = config('bpadmin.entities')[$name]['entity']::destroy($id);
+            $model->delete();
             return redirect('/admin/'.$name);
         } else {
             dd('not-default');

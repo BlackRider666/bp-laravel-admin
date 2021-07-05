@@ -14,10 +14,10 @@ return [
                 'name','email'
             ],
             'show_title'    => 'User Information',
-            'variables'     => [
-                'name'      =>  'string',
-                'email'     =>  'email',
-                'password'  =>  'password',
+            'show_fields'   => [
+                'name',
+                'email',
+                'role_id',
             ],
             'validation_type' => 'default',
             //'create_rules'  => [
@@ -28,25 +28,15 @@ return [
         ],
         'roles' => [
             'type'      =>  'default',
-            'entity'    =>  \App\User::class,
+            'entity'    =>  \App\Role::class,
             'key'       =>  'id',
             'icon'      =>  'fa-users',
             'paginate'  =>  10,
             'table_headers'   =>  [
-                'name','email'
+                'title'
             ],
             'show_title'    => 'User Information',
-            'variables'     => [
-                'name'      =>  'string',
-                'email'     =>  'email',
-                'password'  =>  'password',
-            ],
             'validation_type' => 'default',
-            //'create_rules'  => [
-            //    'name'  =>  'required|string|max:255',
-            //    'email' =>  'required|string|email|unique:users',
-            //    'password' => 'required|string|min:6',
-            //]
         ],
     ],
 ];

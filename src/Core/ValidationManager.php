@@ -11,48 +11,47 @@ class ValidationManager
     {
         $rules = [];
         foreach ($vars as $key => $value) {
-            if($value === 'boolean') {
-                $rules[$key] = ['required','boolean'];
+            if($value['type'] === 'boolean') {
+                $rules[$key][] = 'boolean';
             }
-            if($value === 'date') {
-                $rules[$key] = ['required','date'];
+            if($value['type'] === 'date') {
+                $rules[$key][] = 'date';
             }
-            if($value === 'email') {
-                if($entity) {
-                    $rules[$key] = [
-                        'required',
-                        'string',
-                        'email',
-                        'unique:' . $name . ','
-                        . $value.','
-                        . $entity[config('bpadmin.entities')[$name]['key']].','
-                        . config('bpadmin.entities')[$name]['key']
-                    ];
-                } else {
-                    $rules[$key] = ['required', 'string', 'email', 'unique:' . $name];
-                }
-                //dd($rules);
+            if($value['type'] === 'float') {
+                $rules[$key][] = 'numeric';
             }
-            if($value === 'float') {
-                $rules[$key] = ['required','numeric'];
+            if($value['type'] === 'image') {
+                $rules[$key][] = 'image';
             }
-            if($value === 'image') {
-                $rules[$key] = ['required','image'];
+            if($value['type'] === 'integer') {
+                $rules[$key][] = 'integer';
             }
-            if($value === 'integer') {
-                $rules[$key] = ['required','integer'];
-            }
-            if($value === 'password') {
+            if($key === 'password') {
                 $rules[$key] = ['required', 'string', 'min:8'];
             }
-            if($value === 'phone') {
-                $rules[$key] = ['required','string','max:255'];
+            if($value['type'] === 'string') {
+                if($key === 'email') {
+                    if($entity) {
+                        $rules[$key] = [
+                            'string',
+                            'email',
+                            'unique:' . $name . ','
+                            . $value.','
+                            . $entity[config('bpadmin.entities')[$name]['key']].','
+                            . config('bpadmin.entities')[$name]['key']
+                        ];
+                    } else {
+                        $rules[$key] = ['string', 'email', 'unique:' . $name];
+                    }
+                } else {
+                    $rules[$key] = ['string','max:255'];
+                }
             }
-            if($value === 'string') {
-                $rules[$key] = ['required','string','max:255'];
+            if($value['type'] === 'text') {
+                $rules[$key][] = 'string';
             }
-            if($value === 'text') {
-                $rules[$key] = ['required','string'];
+            if($value['required']) {
+                $rules[$key][] = 'required';
             }
         }
         return $request->validate($rules);

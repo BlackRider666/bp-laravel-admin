@@ -2,7 +2,7 @@
 @foreach($fields as $key => $value)
     @if($value['type'] !== 'boolean')
         <div class="form-group">
-            <label for="{{$key}}" class="form-label">{{trans($name.'.'.$key)}}</label>
+            <label for="{{$key}}" class="form-label">{{trans('bpadmin::'.$name.'.'.$key)}}</label>
             @if($key === 'email')
                 @include('bpadmin::components.inputs.email',[
                    'name'  =>  $key,
@@ -16,11 +16,20 @@
                 'required' => $value['required'],
                 ])
             @else
-                @include('bpadmin::components.inputs.'.$value['type'],[
-                    'name'  =>  $key,
-                    'value' =>  old($key),
-                    'required' => $value['required'],
-                    ])
+                @if(array_key_exists('relation',$value))
+                    @include('bpadmin::components.inputs.select',[
+                        'name'  =>  $key,
+                        'value' =>  old($key),
+                        'items' => $value['relation'],
+                        'required' => $value['required'],
+                        ])
+                @else
+                    @include('bpadmin::components.inputs.'.$value['type'],[
+                        'name'  =>  $key,
+                        'value' =>  old($key),
+                        'required' => $value['required'],
+                        ])
+                @endif
             @endif
             @error($key)
             <div class="invalid-feedback">

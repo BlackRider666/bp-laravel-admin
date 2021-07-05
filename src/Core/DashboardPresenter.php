@@ -38,17 +38,18 @@ class DashboardPresenter
 
     public function getShowPage(string $header, Model $item, string $name, array $relation =[])
     {
+        $fieldsAll = (new TypeFromTable())->getTypeList($item);
+        $showFields = array_flip(config('bpadmin.entities')[$name]['show_fields']);
+        $fields = array_intersect_key($fieldsAll,$showFields);
         return view('bpadmin::components.show-page',[
             'header'    =>  $header,
-            'data'      =>  [
-                'item' => $item->only(array_keys(config('bpadmin.entities')[$name]['variables'])),
-                'fields' => trans($name),
-            ],
-            'relation'  =>  $relation
+            'name'      =>  $name,
+            'item'      => $item,
+            'fields'    => $fields,
         ]);
     }
 
-    public function getCreatePage(string $name)
+    public function getCreatePage(string $name, Model $model)
     {
         $entityArray = config('bpadmin.entities')[$name];
         if($entityArray['type'] === 'default') {
@@ -56,12 +57,8 @@ class DashboardPresenter
                 $entityArray['options']
                 :
                 [];
-            $model = app($entityArray['entity']);
-            $columns = (new TypeFromTable())->getTypeList($model);
-            $fields = [];
-            foreach ($model->getFillable() as $modelType) {
-                $fields[$modelType] = $columns[$modelType];
-            }
+            $fields = (new TypeFromTable())->getTypeList($model);
+
             return view('bpadmin::components.create-page',[
                 'fields'    =>  $fields,
                 'name'      =>  $name,
