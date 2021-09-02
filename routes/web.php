@@ -4,7 +4,7 @@ use BlackParadise\LaravelAdmin\Http\Controllers\AbstractController;
 
 Route::group(['middleware' => ['web']], function () {
     Route::name('bpadmin.')->prefix('admin')->middleware('exists')->group(function () {
-        foreach(config('bpadmin.entities') as $name => $value) {
+        foreach(config('bpadmin.dashboard.entities') as $name => $value) {
             Route::name($name.'.')->prefix($name)->group(function() {
                 Route::get('/', [AbstractController::class,'index'])->name('index');
                 Route::get('/create', [AbstractController::class,'create'])->name('create');

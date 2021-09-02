@@ -10,7 +10,7 @@ class DashboardPresenter
 {
     public function getTablePage(string $name, Request $request)
     {
-        $entityArray = config('bpadmin.entities')[$name];
+        $entityArray = config('bpadmin.dashboard.entities')[$name];
         if($entityArray['type'] === 'default') {
             $withoutToolbar = false;
             $options = [];
@@ -39,7 +39,7 @@ class DashboardPresenter
     public function getShowPage(string $header, Model $item, string $name, array $relation =[])
     {
         $fieldsAll = (new TypeFromTable())->getTypeList($item);
-        $showFields = array_flip(config('bpadmin.entities')[$name]['show_fields']);
+        $showFields = array_flip(config('bpadmin.dashboard.entities')[$name]['show_fields']);
         $fields = array_intersect_key($fieldsAll,$showFields);
         return view('bpadmin::components.show-page',[
             'header'    =>  $header,
@@ -51,7 +51,7 @@ class DashboardPresenter
 
     public function getCreatePage(string $name, Model $model)
     {
-        $entityArray = config('bpadmin.entities')[$name];
+        $entityArray = config('bpadmin.dashboard.entities')[$name];
         if($entityArray['type'] === 'default') {
             $options = array_key_exists('options',$entityArray) ?
                 $entityArray['options']

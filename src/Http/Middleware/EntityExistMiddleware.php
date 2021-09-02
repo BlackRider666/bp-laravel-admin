@@ -12,11 +12,11 @@ class EntityExistMiddleware
         $urlArray = explode("/", $request->getRequestUri());
         $name = $urlArray[2];
         $id = array_key_exists(3,$urlArray)?(int)$urlArray[3]:0;
-        if(array_key_exists($name,config('bpadmin.entities'))) {
+        if(array_key_exists($name,config('bpadmin.dashboard.entities'))) {
             $request->merge([
                 'entity_name'  =>  $name,
             ]);
-            $entity = config('bpadmin.entities')[$name]['entity'];
+            $entity = config('bpadmin.dashboard.entities')[$name]['entity'];
             app()->bind('Illuminate\Database\Eloquent\Model', function() use($entity,$id){
                 if ($id !== 0) {
                     return (new $entity())->find($id);
