@@ -13,14 +13,24 @@
 <body>
 <div class="page-wrapper">
     <div class="page-inner">
-        @include('bpadmin::_partials.navbar')
-        <div class="page-content-wrapper">
-            @include('bpadmin::_partials.header')
-            <main id="js-page-content" role="main" class="page-content">
-                @yield('content')
-            </main>
-            @include('bpadmin::_partials.footer')
-        </div>
+        @if(request()->is('admin/login'))
+            <div class="page-content-wrapper">
+                <main id="js-page-content" role="main" class="page-content">
+                    @yield('content')
+                </main>
+                @include('bpadmin::_partials.footer')
+            </div>
+        @else
+            @include('bpadmin::_partials.navbar')
+
+            <div class="page-content-wrapper">
+                @include('bpadmin::_partials.header')
+                <main id="js-page-content" role="main" class="page-content">
+                    @yield('content')
+                </main>
+                @include('bpadmin::_partials.footer')
+            </div>
+        @endif
     </div>
 </div>
 @include('bpadmin::_partials.scripts')

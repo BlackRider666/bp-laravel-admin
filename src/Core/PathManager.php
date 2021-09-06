@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Core;
+namespace BlackParadise\LaravelAdmin\Core;
 
 
 class PathManager
@@ -21,6 +21,6 @@ class PathManager
      */
     public function getDefaultPicture(): string
     {
-        return env('APP_URL').'/img/default.jpg';
+        return env('APP_URL').'/bpadmin/img/default.jpg';
     }
 }

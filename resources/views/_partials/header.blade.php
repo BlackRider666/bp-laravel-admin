@@ -27,7 +27,7 @@
                 <div class="dropdown-header bg-trans-gradient d-flex flex-row py-4 rounded-top">
                     <div class="d-flex flex-row align-items-center mt-1 mb-1 color-white">
                         <div class="info-card-text">
-                            <div class="fs-lg text-truncate text-truncate-lg">{{ Auth::user()->first_name.' '.Auth::user()->last_name}} </div>
+                            <div class="fs-lg text-truncate text-truncate-lg">{{ Auth::user()->full_name}} </div>
                             <span class="text-truncate text-truncate-md opacity-80">{{ Auth::user()->email}} </span>
                         </div>
                     </div>
@@ -42,12 +42,12 @@
                     <i class="float-right text-muted fw-n">F11</i>
                 </a>
                 <div class="dropdown-divider m-0"></div>
-                <a class="dropdown-item fw-500 pt-3 pb-3" href="{{ route('logout') }}"
+                <a class="dropdown-item fw-500 pt-3 pb-3" href="{{ route('bpadmin.logout') }}"
                    onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">
                     <span data-i18n="drpdwn.page-logout">{{ __('Logout') }}</span>
                 </a>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                <form id="logout-form" action="{{ route('bpadmin.logout') }}" method="POST" style="display: none;">
                     @csrf
                 </form>
             </div>

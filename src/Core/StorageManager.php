@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Core;
+namespace BlackParadise\LaravelAdmin\Core;
 
 
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -11,15 +11,20 @@ use Intervention\Image\Facades\Image;
 
 class StorageManager
 {
+    public function __construct(string $disk = 'public')
+    {
+        $this->disk = $disk;
+    }
+
     /** @var string */
-    protected $localPublicDisk = 'public';
+    protected $disk = 'public';
 
     /**
      * @return Filesystem
      */
-    public function getLocalPublicDisk(): Filesystem
+    public function getDisk(): Filesystem
     {
-        return Storage::disk($this->localPublicDisk);
+        return Storage::disk($this->disk);
     }
 
     /**
@@ -34,10 +39,10 @@ class StorageManager
             $constraint->aspectRatio();
         })->save();
         $filename = uniqid(time(), true) . '.' . $file->getClientOriginalExtension();
-        if (!$this->getLocalPublicDisk()->exists($type)) {
-            $this->getLocalPublicDisk()->makeDirectory($type);
+        if (!$this->getDisk()->exists($type)) {
+            $this->getDisk()->makeDirectory($type);
         }
-        $this->getLocalPublicDisk()->put($type . '/' . $filename, $image);
+        $this->getDisk()->put($type . '/' . $filename, $image);
 
         return $filename;
     }
@@ -48,7 +53,7 @@ class StorageManager
      */
     public function deleteFile(string $file, string $type): void
     {
-        $this->getLocalPublicDisk()->delete($type.'/'.$file);
+        $this->getDisk()->delete($type.'/'.$file);
     }
 
     /**
@@ -59,10 +64,10 @@ class StorageManager
     {
         $file = file_get_contents($avatar);
         $filename = uniqid(time(), true) . '.jpg';
-        if (!$this->getLocalPublicDisk()->exists('user_avatar')) {
-            $this->getLocalPublicDisk()->makeDirectory('user_avatar');
+        if (!$this->getDisk()->exists('user_avatar')) {
+            $this->getDisk()->makeDirectory('user_avatar');
         }
-        $this->getLocalPublicDisk()->put('user_avatar/' . $filename, $file);
+        $this->getDisk()->put('user_avatar/' . $filename, $file);
         return $filename;
     }
 
@@ -74,10 +79,10 @@ class StorageManager
     public function saveFile(UploadedFile $file, string $type): string
     {
         $filename = uniqid(time(), true) . '.' . $file->getClientOriginalExtension();
-        if (!$this->getLocalPublicDisk()->exists($type)) {
-            $this->getLocalPublicDisk()->makeDirectory($type);
+        if (!$this->getDisk()->exists($type)) {
+            $this->getDisk()->makeDirectory($type);
         }
-        $this->getLocalPublicDisk()->putFileAs(
+        $this->getDisk()->putFileAs(
             $type , $file, $filename
         );
 

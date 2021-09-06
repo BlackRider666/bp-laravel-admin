@@ -22,12 +22,11 @@
                 <a href="#" class="d-flex align-items-center text-white">
                     <a href="#" class="d-flex align-items-center text-white">
                                     <span class="text-truncate text-truncate-sm d-inline-block">
-                                        {{ Auth::user()->first_name.' '.Auth::user()->last_name}}
+                                        {{ Auth::user()->full_name}}
                                     </span>
                     </a>
                 </a>
             </div>
-            <img src="{{asset('img/card-backgrounds/cover-2-lg.png')}}" class="cover" alt="cover">
             <a href="#" onclick="return false;" class="pull-trigger-btn" data-action="toggle" data-class="list-filter-active" data-target=".page-sidebar" data-focus="nav_filter_input">
                 <i class="fal fa-angle-down"></i>
             </a>

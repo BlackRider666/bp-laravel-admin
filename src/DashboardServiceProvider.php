@@ -3,6 +3,7 @@
 
 namespace BlackParadise\LaravelAdmin;
 
+use BlackParadise\LaravelAdmin\Http\Middleware\AdminAuth;
 use BlackParadise\LaravelAdmin\Http\Middleware\EntityExistMiddleware;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Http\Kernel;
@@ -30,6 +31,7 @@ class DashboardServiceProvider extends ServiceProvider
 
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('exists', EntityExistMiddleware::class);
+        $router->aliasMiddleware('admin-auth', AdminAuth::class);
     }
 
     /**
