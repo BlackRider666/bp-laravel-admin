@@ -14,8 +14,8 @@ class GenerateTranslation extends Command
     {
         $this->info('Start generate translations!');
         $directoryPath = resource_path('lang/vendor/bpadmin/en');
-        foreach(config('bpadmin.entities') as $key => $options) {
-            $this->info('Generation for: '.$key.' started!');
+        foreach(config('bpadmin.dashboard.entities') as $key => $options) {
+            $this->info('Generation for: '.ucfirst($key).' started!');
             $fillables = (new $options['entity'])->getFillable();
             $translation = '<?php'.PHP_EOL.' return ['.PHP_EOL;
             foreach ($fillables as $field) {
@@ -24,7 +24,7 @@ class GenerateTranslation extends Command
             $translation.='];';
             $path = $directoryPath.'/'.$key.'.php';
             file_put_contents($path, $translation);
-            $this->info('Generation for: '.$key.' ended!');
+            $this->info('Generation for: '.ucfirst($key).' ended!');
         }
         $this->info('Translations generated!');
     }

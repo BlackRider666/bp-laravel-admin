@@ -109,7 +109,7 @@ class AbstractController extends Controller
     public function destroy(Model $model)
     {
         $name = request()->get('entity_name');
-        if(config('bbpadmin.dashboard.entities')[$name]['type'] === 'default') {
+        if(config('bpadmin.dashboard.entities')[$name]['type'] === 'default') {
             $model->delete();
             return redirect('/admin/'.$name);
         } else {
