@@ -13,7 +13,7 @@ class PathManager
      */
     public function getFile($thumb, string $type): string
     {
-        return (new StorageManager())->getLocalPublicDisk()->url($type.'/'.$thumb);
+        return (new StorageManager())->getDisk()->url($type.'/'.$thumb);
     }
 
     /**
