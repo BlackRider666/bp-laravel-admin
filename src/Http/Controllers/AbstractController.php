@@ -2,6 +2,7 @@
 
 namespace BlackParadise\LaravelAdmin\Http\Controllers;
 
+use BlackParadise\LaravelAdmin\Core\StorageManager;
 use BlackParadise\LaravelAdmin\Core\TypeFromTable;
 use BlackParadise\LaravelAdmin\Core\ValidationManager;
 use BlackParadise\LaravelAdmin\Core\DashboardPresenter;
@@ -44,6 +45,10 @@ class AbstractController extends Controller
                 $request,
                 $name
             );
+            if ($item = array_search(['type' => 'image','required' => true],$vars)) {
+                $data[$item] = (new StorageManager())
+                    ->savePicture($request->file($item),$name,400);
+            }
             $model::create($data);
             return redirect('/admin/'.$name);
         } else {
@@ -76,9 +81,6 @@ class AbstractController extends Controller
                 $model,
                 $name,
                 $vars,
-                array_key_exists('options',config('bbpadmin.dashboard.entities')[$name]) ?
-                    config('bpadmin.dashboard.entities')[$name]['options']
-                    :
                     []
             );
         } else {
@@ -97,6 +99,13 @@ class AbstractController extends Controller
                 $name,
                 $model->toArray()
             );
+            if ($item = array_search(['type' => 'image','required' => true],$vars)) {
+                if ($model->$item !== null) {
+                    (new StorageManager())->deleteFile($model->$item,$name);
+                }
+                $data[$item] = (new StorageManager())
+                    ->savePicture($request->file($item),$name,400);
+            }
             $model->update($data);
             return redirect('/admin/'.$name);
         } else {

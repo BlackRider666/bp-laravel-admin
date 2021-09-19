@@ -22,6 +22,7 @@ class TypeFromTable
         $schema = $model->getConnection()->getDoctrineSchemaManager();
         $columns = $schema->listTableColumns($table);
         $typeList = [];
+        $casts = $model->getCasts();
         foreach ($columns as $column) {
             $name = $column->getName();
             $type = $column->getType()->getName();
@@ -60,7 +61,7 @@ class TypeFromTable
                     break;
             }
             $typeList[$name] = [
-                'type'  =>  $type,
+                'type'  =>  array_key_exists($name,$casts)?$casts[$name]:$type,
                 'required'  =>  $column->getNotnull(),
             ];
         }
