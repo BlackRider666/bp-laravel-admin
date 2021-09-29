@@ -6,11 +6,16 @@ namespace BlackParadise\LaravelAdmin\Http\Controllers;
 
 use BlackParadise\LaravelAdmin\Core\AbstractRepo;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
-abstract class SimpleApiController
+abstract class SimpleApiController extends Controller
 {
+    use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
     /**
      * @var Model
      */

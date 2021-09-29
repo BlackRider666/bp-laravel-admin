@@ -10,7 +10,7 @@ class EntityExistMiddleware
     public function handle(Request $request, Closure $next)
     {
         $urlArray = explode("/", $request->getRequestUri());
-        $name = $urlArray[2];
+        $name = explode('?',$urlArray[2])[0];
         $id = array_key_exists(3,$urlArray)?(int)$urlArray[3]:0;
         if(array_key_exists($name,config('bpadmin.dashboard.entities'))) {
             $request->merge([

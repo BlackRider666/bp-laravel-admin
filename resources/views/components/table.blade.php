@@ -39,7 +39,7 @@
             </tbody>
         </table>
         <div class="text-center">
-            {{ $items->appends(request()->query())->links() }}
+            {{ $items->appends(request()->query('search'))->links() }}
         </div>
     </div>
 </div>
