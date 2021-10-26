@@ -1,9 +1,8 @@
-
 @foreach($fields as $key => $value)
-    @if($value !== 'boolean')
+    @if($value['type'] !== 'boolean')
         <div class="form-group">
             <label for="{{$key}}" class="form-label">{{trans('bpadmin::'.$name.'.'.$key)}}</label>
-            @if($value === 'image')
+            @if($value['type'] === 'image')
                 <?php $url = $key.'_url' ?>
                 @include('bpadmin::components.inputs.'.$model->getCasts()[$field],[
                     'name'  =>  $key,
@@ -46,7 +45,7 @@
     @else
         <div class="form-group">
             <div class="custom-control custom-checkbox">
-                @include('bpadmin::components.inputs.'.$value,[
+                @include('bpadmin::components.inputs.'.$value['type'],[
                     'name'  =>  $key,
                     'value' =>  $model->$key,
                     ])

@@ -43,15 +43,7 @@ class TypeFromTable
                     $type = 'integer';
                     break;
                 case 'boolean':
-                    switch (config('database.default')) {
-                        case 'sqlite':
-                        case 'mysql':
-                            $type = 'integer';
-                            break;
-                        default:
-                            $type = 'boolean';
-                            break;
-                    }
+                    $type = 'boolean';
                     break;
                 case 'float':
                     $type = 'float';
@@ -72,13 +64,28 @@ class TypeFromTable
                 if (in_array(class_basename($returnType->getName()), ['BelongsTo', 'BelongsToMany'])) {
                     $relName = $reflectionMethod->getName();
                     $modelRel = (new $reflectionMethod->class())->$relName()->getRelated();
-                    $typeList[$reflectionMethod->getName().'_id']['relation'] = $modelRel->forSelect();
+                    $typeList[$reflectionMethod->getName().'_id']['relation'] = method_exists($modelRel,'forSelect') ?
+                        $modelRel->forSelect()
+                    :
+                        $modelRel->pluck('name', 'id');
+                    if(in_array(class_basename($returnType->getName()), ['BelongsToMany'])) {
+                        $typeList[$reflectionMethod->getName().'_id']['multiple'] = true;
+                    }
                 }
             }
         }
         $fields = [];
-        foreach ($model->getFillable() as $modelType) {
-            $fields[$modelType] = $typeList[$modelType];
+        $custom_fields = $model->createWithRel;
+        $fillables = !empty($custom_fields)?
+            array_merge($model->getFillable(),array_keys($custom_fields))
+            :
+            $model->getFillable();
+        foreach ($fillables as $modelType) {
+            if (!empty($custom_fields) &&array_key_exists($modelType,$custom_fields)) {
+                $fields[$modelType] = array_merge($typeList[$modelType],$custom_fields[$modelType]);
+            } else {
+                $fields[$modelType] = $typeList[$modelType];
+            }
         }
         return $fields;
     }

@@ -8,7 +8,6 @@ return [
             'type'      =>  'default',
             'entity'    =>  \App\User::class,
             'key'       =>  'id',
-            'icon'      =>  'fa-users',
             'paginate'  =>  10,
             'table_headers'   =>  [
                 'name','email'
@@ -20,17 +19,11 @@ return [
                 'role_id',
             ],
             'validation_type' => 'default',
-            //'create_rules'  => [
-            //    'name'  =>  'required|string|max:255',
-            //    'email' =>  'required|string|email|unique:users',
-            //    'password' => 'required|string|min:6',
-            //]
         ],
         'roles' => [
             'type'      =>  'default',
             'entity'    =>  \App\Role::class,
             'key'       =>  'id',
-            'icon'      =>  'fa-users',
             'paginate'  =>  10,
             'table_headers'   =>  [
                 'title'
@@ -38,5 +31,14 @@ return [
             'show_title'    => 'User Information',
             'validation_type' => 'default',
         ],
+    ],
+    'menu' => [
+        'users' => [
+            'icon' => 'fa-users',
+            'items' => [
+                'users',
+                'roles',
+            ],
+        ]
     ],
 ];

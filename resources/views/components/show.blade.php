@@ -13,8 +13,8 @@
                 </td>
             @else
                 @if(array_key_exists('relation',$value))
-                    <?php $method = substr($key,0,-3)?>
-                    <td>{{$item->$method->relation_title}}</td>
+                    <?php $method = substr($key,0,-3).'_title'?>
+                    <td>{{$item->$method}}</td>
                 @else
                     <td>{{$item->$key}}</td>
                 @endif

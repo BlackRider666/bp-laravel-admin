@@ -1,7 +1,7 @@
 <aside class="page-sidebar">
     <div class="page-logo">
         <a href="#" class="page-logo-link press-scale-down d-flex align-items-center position-relative" data-toggle="modal" data-target="#modal-shortcut">
-            <span class="page-logo-text mr-1">{{config('bpadmin.dashboard.title')}}</span>
+            <span class="page-logo-text mr-1">{{config('bpadmin.title')}}</span>
             <span class="position-absolute text-white opacity-50 small pos-top pos-right mr-2 mt-n2"></span>
             <i class="fal fa-angle-down d-inline-block ml-1 fs-lg color-primary-300"></i>
         </a>
@@ -40,12 +40,27 @@
                     <span class="nav-link-text">Main</span>
                 </a>
             </li>
-            @foreach(config('bpadmin.dashboard.entities') as $key => $entity)
-                <li class="{{request()->is('admin/'.$key.'/*')|| request()->is('admin/'.$key)?'active':''}}">
-                    <a href="{{url('/admin/'.$key)}}" title="{{ucfirst($key)}}">
-                        <i class="fal fas {{$entity['icon']}}"></i>
-                        <span class="nav-link-text">{{ucfirst($key)}}</span>
+            @foreach(config('bpadmin.dashboard.menu') as $key => $entity)
+                <?php $patterns = [];
+                    foreach($entity['items'] as $it) {
+                        $patterns[] = 'admin/'.$it.'/*';
+                        $patterns[] = 'admin/'.$it;
+                    }
+                ?>
+                <li class="{{request()->is($patterns)?'active':''}}">
+                    <a href="#" title="{{ucwords(str_replace('_',' ',$key))}}" data-filter-tags="{{str_replace('_',' ',$key)}}">
+                        <i class="fal {{$entity['icon']}}"></i>
+                        <span class="nav-link-text">{{ucwords(str_replace('_',' ',$key))}}</span>
                     </a>
+                    <ul>
+                        @foreach($entity['items'] as $item)
+                            <li class="{{request()->is('admin/'.$item.'/*')|| request()->is('admin/'.$item)?'active':''}}">
+                                <a href="{{url('/admin/'.$item)}}" title="{{ucwords(str_replace('_',' ',$item))}}" data-filter-tags="{{str_replace('_',' ',$item)}}" class=" waves-effect waves-themed">
+                                    <span class="nav-link-text">{{ucwords(str_replace('_',' ',$item))}}</span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
                 </li>
             @endforeach
         </ul>

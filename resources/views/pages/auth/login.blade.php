@@ -1,5 +1,5 @@
 @extends('bpadmin::main')
-@section('title', trans('bpadmin::common.login_page.log_in'))
+@section('title', 'Login')
 @section('content')
     <div class="row justify-content-center align-items-center">
         <div class="col-lg-6">
@@ -13,7 +13,7 @@
                     <form action="{{route('bpadmin.loginPost')}}" method="POST">
                         @csrf
                         <div class="form-group">
-                            <label class="form-label" for="email">{{__('bpadmin::common.login_page.email')}}</label>
+                            <label class="form-label" for="email">Email</label>
                             <input type="email" id="email" name="email" class="form-control" placeholder="Email">
                             @error('email')
                                 <span class="invalid-feedback" style="display:block" role="alert">
@@ -22,7 +22,7 @@
                             @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="password">{{__('bpadmin::common.login_page.password')}}</label>
+                            <label class="form-label" for="password">Password</label>
                             <input type="password" id="password" name="password" class="form-control" placeholder="Password">
                             @error('password')
                                 <span class="invalid-feedback" role="alert" style="display:block">
@@ -30,7 +30,7 @@
                                 </span>
                             @enderror
                         </div>
-                        <button type="submit" class="btn btn-default waves-effect waves-themed">{{__('bpadmin::common.login_page.log_in')}}</button>
+                        <button type="submit" class="btn btn-default waves-effect waves-themed">Login</button>
                     </form>
                 </div>
             </div>
