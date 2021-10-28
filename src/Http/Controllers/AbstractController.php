@@ -11,6 +11,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class AbstractController extends Controller
@@ -39,7 +40,9 @@ class AbstractController extends Controller
     {
         $name = $request->get('entity_name');
         if(config('bpadmin.dashboard.entities')[$name]['validation_type'] === 'default') {
-            $vars = (new TypeFromTable())->getTypeList($model);
+            $vars =  Cache::rememberForever($name,function() use ($model) {
+                return (new TypeFromTable())->getTypeList($model);
+            });
             $data = (new ValidationManager)->validate(
                 $vars,
                 $request,
@@ -76,7 +79,9 @@ class AbstractController extends Controller
     {
         $name = request()->get('entity_name');
         if(config('bpadmin.dashboard.entities')[$name]['type'] === 'default') {
-            $vars = (new TypeFromTable())->getTypeList($model);
+            $vars = Cache::rememberForever($name,function() use ($model) {
+                return (new TypeFromTable())->getTypeList($model);
+            });
             return (new DashboardPresenter())->getEditPage(
                 $model,
                 $name,
@@ -92,7 +97,9 @@ class AbstractController extends Controller
     {
         $name = $request->get('entity_name');
         if(config('bpadmin.dashboard.entities')[$name]['validation_type'] === 'default') {
-            $vars = (new TypeFromTable())->getTypeList($model);
+            $vars = Cache::rememberForever($name,function() use ($model) {
+                return (new TypeFromTable())->getTypeList($model);
+            });
             $data = (new ValidationManager)->validate(
                 $vars,
                 $request,
@@ -119,6 +126,14 @@ class AbstractController extends Controller
     {
         $name = request()->get('entity_name');
         if(config('bpadmin.dashboard.entities')[$name]['type'] === 'default') {
+            $vars = Cache::rememberForever($name,function() use ($model) {
+                return (new TypeFromTable())->getTypeList($model);
+            });
+            if ($item = array_search(['type' => 'image','required' => true],$vars)) {
+                if ($model->$item !== null) {
+                    (new StorageManager())->deleteFile($model->$item,$name);
+                }
+            }
             $model->delete();
             return redirect('/admin/'.$name);
         } else {

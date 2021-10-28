@@ -5,6 +5,7 @@ namespace BlackParadise\LaravelAdmin\Core;
 use Doctrine\DBAL\Schema\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardPresenter
 {
@@ -38,7 +39,9 @@ class DashboardPresenter
 
     public function getShowPage(string $header, Model $item, string $name, array $relation =[])
     {
-        $fieldsAll = (new TypeFromTable())->getTypeList($item);
+        $fieldsAll = Cache::rememberForever($name,function() use ($item) {
+            return (new TypeFromTable())->getTypeList($item);
+        });
         $showFields = array_flip(config('bpadmin.dashboard.entities')[$name]['show_fields']);
         $fields = array_intersect_key($fieldsAll,$showFields);
         return view('bpadmin::components.show-page',[
@@ -57,7 +60,9 @@ class DashboardPresenter
                 $entityArray['options']
                 :
                 [];
-            $fields = (new TypeFromTable())->getTypeList($model);
+            $fields = Cache::rememberForever($name,function() use ($model) {
+                return (new TypeFromTable())->getTypeList($model);
+            });
 
             return view('bpadmin::components.create-page',[
                 'fields'    =>  $fields,
