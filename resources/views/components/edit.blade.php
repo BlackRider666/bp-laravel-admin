@@ -27,6 +27,7 @@
                         'value' =>  $model->$key,
                         'items' => $value['relation'],
                         'required' => $value['required'],
+                        'multiple' => array_key_exists('multiple', $value)?$value['multiple']:false,
                         ])
                 @else
                     @include('bpadmin::components.inputs.'.$value['type'],[
