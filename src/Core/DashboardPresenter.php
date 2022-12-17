@@ -2,86 +2,132 @@
 
 namespace BlackParadise\LaravelAdmin\Core;
 
-use Doctrine\DBAL\Schema\Schema;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\Form;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\FormBuilder;
+use BlackParadise\LaravelAdmin\Core\PageBuilder\Components\LinkComponent;
+use BlackParadise\LaravelAdmin\Core\PageBuilder\PageBuilder;
+use BlackParadise\LaravelAdmin\Core\TableBuilder\TableBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
+use RuntimeException;
 
 class DashboardPresenter
 {
-    public function getTablePage(string $name, Request $request)
+
+    private FormBuilder $form;
+    /**
+     * @param string $name
+     * @param Request $request
+     * @return View
+     */
+    public function getTablePage(string $name, Request $request): View
     {
-        $entityArray = config('bpadmin.dashboard.entities')[$name];
+        $entityArray = config('bpadmin.entities')[$name];
         if($entityArray['type'] === 'default') {
-            $withoutToolbar = false;
-            $options = [];
-            $withoutCreate = false;
-            $withoutShow = false;
-            $data = $request->all(['perPage']);
-            $data['perPage'] = array_key_exists('paginate',$entityArray)?
-                $entityArray['paginate']
-                :
-                10;
-            $items = (new AbstractRepo($entityArray['entity']))->search($data);
-            return view('bpadmin::components.table-page',[
-                'headers'   =>  $entityArray['table_headers'],
-                'name'      =>  $name,
-                'items'     =>  $items,
-                'withoutToolbar'    =>  $withoutToolbar,
-                'options'           =>  $options,
-                'withoutCreate'     =>  $withoutCreate,
-                'withoutShow'       =>  $withoutShow
-            ]);
-        } else {
-            dd('not-default');
+            $data = $request->all(['perPage','page','sortBy','sortDesc', 'q']);
+            $searchable = array_key_exists('search', $entityArray);
+            $headers = $entityArray['table_headers'];
+            $items = (new AbstractRepo($entityArray['entity'], $searchable?$entityArray['search']:null))->search($data, $headers);
+            $headers[] = 'actions';
+            return (new PageBuilder('bpadmin::layout.crud',ucfirst($name),[
+                (new TableBuilder($headers,$items, $name, $searchable))->render(),
+            ], [
+                (new LinkComponent('Create','mdi-plus',[
+                    'href'  => route('bpadmin.'.$name.'.create'),
+                ]))->render()
+            ]))->render();
         }
+
+        if (!array_key_exists('index', $entityArray['custom_pages'])) {
+            throw new RuntimeException('Add field "custom_pages" "index" of type PageBuilder to your config or change "type" to "default"');
+        }
+
+        return $entityArray['custom_pages']['index']->render();
     }
 
-    public function getShowPage(string $header, Model $item, string $name, array $relation =[])
+    /**
+     * @param Model $item
+     * @param string $name
+     * @return View
+     */
+    public function getShowPage(Model $item, string $name): View
     {
-        $fieldsAll = Cache::rememberForever($name,function() use ($item) {
-            return (new TypeFromTable())->getTypeList($item);
-        });
-        $showFields = array_flip(config('bpadmin.dashboard.entities')[$name]['show_fields']);
-        $fields = array_intersect_key($fieldsAll,$showFields);
-        return view('bpadmin::components.show-page',[
-            'header'    =>  $header,
-            'name'      =>  $name,
-            'item'      => $item,
-            'fields'    => $fields,
-        ]);
-    }
-
-    public function getCreatePage(string $name, Model $model)
-    {
-        $entityArray = config('bpadmin.dashboard.entities')[$name];
+        $entityArray = config('bpadmin.entities')[$name];
         if($entityArray['type'] === 'default') {
-            $options = array_key_exists('options',$entityArray) ?
-                $entityArray['options']
-                :
-                [];
-            $fields = Cache::rememberForever($name,function() use ($model) {
+            $fieldsAll = Cache::rememberForever($name, function () use ($item) {
+                return (new TypeFromTable())->getTypeList($item);
+            });
+            $showFields = array_flip($entityArray['show_fields']);
+            $fields = array_intersect_key($fieldsAll, $showFields);
+            return (new PageBuilder('bpadmin::layout.crud',$entityArray['show_title'],[
+                view('bpadmin::components.show', [
+                    'fields' => $fields,
+                    'name'   => $name,
+                    'item'   => $item,
+                ])
+                ]))->render();
+        }
+
+        if (!array_key_exists('show', $entityArray['custom_pages'])) {
+            throw new RuntimeException('Add field "custom_pages" "show" of type PageBuilder to your config or change "type" to "default"');
+        }
+
+        return $entityArray['custom_pages']['show']->render();
+    }
+
+    /**
+     * @param string $name
+     * @param Model $model
+     * @return View
+     */
+    public function getCreatePage(string $name, Model $model): View
+    {
+        $entityArray = config('bpadmin.entities')[$name];
+        if($entityArray['type'] === 'default') {
+            $this->form = (new FormBuilder(new Form([],$model,$name)));
+            return (new PageBuilder('bpadmin::layout.crud','Create '.ucfirst($name),[
+                $this->form->renderCreateForm(),
+            ]))->render();
+        }
+
+        if (!array_key_exists('create', $entityArray['custom_pages'])) {
+            throw new RuntimeException('Add field "custom_pages" "create" of type PageBuilder to your config or change "type" to "default"');
+        }
+
+        return $entityArray['custom_pages']['create']->render();
+
+    }
+
+    /**
+     * @param Model $model
+     * @param string $name
+     * @return View
+     */
+    public function getEditPage(Model $model, string $name): View
+    {
+        $entityArray = config('bpadmin.entities')[$name];
+        if($entityArray['type'] === 'default') {
+            $fields = Cache::rememberForever($name, static function() use ($model) {
                 return (new TypeFromTable())->getTypeList($model);
             });
-
-            return view('bpadmin::components.create-page',[
-                'fields'    =>  $fields,
-                'name'      =>  $name,
-                'options'   =>  $options,
-            ]);
-        } else {
-            dd('not-default');
+            array_walk($fields,  static function(&$item, $key) use ($model) {
+                $item['value'] = $model->$key;
+            });
+            $fields['submit'] = [
+                'type' => 'submit',
+                'label' => trans('bpadmin::common.forms.update')
+            ];
+            $this->form = (new FormBuilder(new Form([],$model,$name)));
+            return (new PageBuilder('bpadmin::layout.crud','Update '.ucfirst($name),[
+                $this->form->renderEditForm(),
+            ]))->render();
+        }
+        if (!array_key_exists('edit', $entityArray['custom_pages'])) {
+            throw new RuntimeException('Add field "custom_pages" "edit" of type PageBuilder to your config or change "type" to "default"');
         }
 
-    }
-
-    public function getEditPage(Model $model,string $name,array $fields, array $options = [])
-    {
-        return view('bpadmin::components.edit-page',[
-            'model'  =>  $model,
-            'name'   =>  $name,
-            'fields' =>  $fields,
-            'options'   =>  $options,
-        ]);
+        return $entityArray['custom_pages']['edit']->render();
     }
 }

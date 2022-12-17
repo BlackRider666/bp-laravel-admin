@@ -14,11 +14,13 @@ class AbstractRepo
     /**
      * @var Model
      */
-    private $model;
+    private Model $model;
+    private $searchField;
 
-    public function __construct(string $model)
+    public function __construct(string $model,  $searchField = null)
     {
         $this->model = app($model);
+        $this->searchField = $searchField;
     }
 
     /**
@@ -48,11 +50,33 @@ class AbstractRepo
 
     /**
      * @param array $data
+     * @param array $fields
      * @return LengthAwarePaginator
      */
-    public function search(array $data): LengthAwarePaginator
+    public function search(array $data, array $fields): LengthAwarePaginator
     {
-        $perPage = array_key_exists('perPage',$data)?$data['perPage']:10;
-        return $this->query()->paginate($perPage);
+        $perPage = $data['perPage']?:10;
+        $sortBy = $data['sortBy']?:'id';
+        $page = $data['page']?:1;
+        $sortDesc = $data['sortDesc'] !== null;
+        $fields[] = 'id';
+        $query = $this->query();
+        if ($data['q']) {
+            if (is_array($this->searchField)) {
+                $query->where(function($sub) use ($data){
+                    foreach($this->searchField as $key => $field) {
+                        if ($key === 0) {
+                            $sub->where($field,'like','%'.$data['q'].'%');
+                        } else {
+                            $sub->orWhere($field, 'like', '%' . $data['q'] . '%');
+                        }
+                    }
+                });
+            } else {
+                $query->where($this->searchField,'like','%'.$data['q'].'%');
+            }
+        }
+        $query->orderBy($sortBy,$sortDesc?'desc':'asc');
+        return $query->paginate($perPage,$fields,'page',$page);
     }
 }

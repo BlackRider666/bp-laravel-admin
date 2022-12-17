@@ -16,6 +16,11 @@ class PathManager
         return (new StorageManager())->getDisk()->url($type.'/'.$thumb);
     }
 
+    public function getTypeFile(string $thumb, string $type):string
+    {
+        return (new StorageManager())->getDisk()->mimeType($type.'/'.$thumb);
+    }
+
     /**
      * @return string
      */

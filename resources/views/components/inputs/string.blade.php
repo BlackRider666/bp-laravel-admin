@@ -1,1 +1,5 @@
-<input type="text" class="form-control @error($name)is-invalid @enderror" id="{{$name}}" name="{{$name}}" value="{{$value?:''}}" required="{{$required?'required':''}}">
+<string-input {!!  count($errors) > 0 ? 'error="'.$errors[0].'"':null!!}
+@foreach($attributes as $key => $value)
+    {!! $key.'="'.$value.'"' !!}
+@endforeach
+></string-input>

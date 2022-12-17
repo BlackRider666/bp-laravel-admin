@@ -3,8 +3,11 @@
 
 namespace BlackParadise\LaravelAdmin\Http\Controllers;
 
-
-use App\Models\User\User;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\Form;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\FormBuilder;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\EmailInput;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\PasswordInput;
+use BlackParadise\LaravelAdmin\Core\PageBuilder\PageBuilder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
@@ -15,7 +18,17 @@ class AuthController
 {
     public function getLoginPage()
     {
-        return view('bpadmin::pages.auth.login');
+        $form = new Form([
+            'action'    =>  route('bpadmin.loginPost'),
+            'method'    =>  'POST',
+            'submit_label' => trans('bpadmin::auth.btn.login')
+        ]);
+        $form->addField(new EmailInput(['name' => 'email', 'required' => true],'auth',[]));
+        $form->addField(new PasswordInput(['name' => 'password', 'required' => true],'auth',[]));
+        return (new PageBuilder('bpadmin::layout.auth',config('bpadmin.title'),[
+
+            (new FormBuilder($form))->render(),
+        ]))->render();
     }
 
     public function login(Request $request)
@@ -24,7 +37,7 @@ class AuthController
             'email' => 'required|string|email|exists:users,email',
             'password' => 'required|string|max:255',
         ]);
-        $user = User::where('email', $data['email'])->first();
+        $user = config('bpadmin.userEntity')::where('email', $data['email'])->first();
         if (! $user
             || ! Hash::check($data['password'], $user->password)
             || ! $user->hasRole('superadmin')

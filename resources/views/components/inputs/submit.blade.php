@@ -1,1 +1,5 @@
-<button class="btn btn-primary ml-auto waves-effect waves-themed" type="submit">{{trans('bpadmin::common.forms.submit')}}</button>
+<submit-input
+    @foreach($attributes as $key => $value)
+        {!! $key.'="'.$value.'"' !!}
+    @endforeach
+></submit-input>

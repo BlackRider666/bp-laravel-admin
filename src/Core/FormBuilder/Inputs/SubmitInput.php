@@ -4,28 +4,23 @@ namespace BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs;
 
 class SubmitInput implements InputInterface
 {
-    private array $attributes = [
-        'type'  =>  'submit',
-        'class' =>  'btn btn-primary ml-auto waves-effect waves-themed',
-    ];
+    private array $attributes = [];
 
-    private string $transField;
-
-    public function __construct(array $attributes, string $transField = 'bpadmin::common.forms.submit')
+    public function __construct(array $attributes = [])
     {
+        $this->attributes['label'] = trans('bpadmin::common.forms.submit');
+        unset($attributes['name']);
         $this->attributes = array_merge($this->attributes,$attributes);
-        $this->transField = $transField;
     }
-    public function render()
-    {
-        $input = '';
-        foreach ($this->attributes as $key => $value) {
-            $input .= $key.'="'.$value.'"';
-        }
-        $input .='>';
-        $input .= trans($this->transField);
-        $input .= '</button>';
 
-        return $input;
+    /**
+     * @return string
+     */
+    public function render(): string
+    {
+        $view =  view('bpadmin::components.inputs.submit', [
+            'attributes' => $this->attributes,
+        ]);
+        return $view->render();
     }
 }

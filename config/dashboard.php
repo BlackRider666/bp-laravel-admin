@@ -2,6 +2,7 @@
 
 return [
     'title' => 'BPAdmin',
+    'userEntity'    => \App\User::class,
 
     'entities' => [
         'users' => [
@@ -9,10 +10,11 @@ return [
             'entity'    =>  \App\User::class,
             'key'       =>  'id',
             'paginate'  =>  10,
+            'search'    =>  ['name','email'],
+            'show_title' => 'User Information',
             'table_headers'   =>  [
                 'name','email'
             ],
-            'show_title'    => 'User Information',
             'show_fields'   => [
                 'name',
                 'email',
@@ -20,25 +22,15 @@ return [
             ],
             'validation_type' => 'default',
         ],
-        'roles' => [
-            'type'      =>  'default',
-            'entity'    =>  \App\Role::class,
-            'key'       =>  'id',
-            'paginate'  =>  10,
-            'table_headers'   =>  [
-                'title'
-            ],
-            'show_title'    => 'User Information',
-            'validation_type' => 'default',
-        ],
     ],
     'menu' => [
         'users' => [
-            'icon' => 'fa-users',
+            'icon' => 'mdi-account-group',
             'items' => [
-                'users',
-                'roles',
+                'users' => [
+                    'icon' => 'mdi-account-group',
+                ],
             ],
-        ]
+        ],
     ],
 ];

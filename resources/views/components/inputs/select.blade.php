@@ -1,6 +1,21 @@
-<select class="form-control {{$errors->has($name) ? 'is-invalid':''}}" id="{{$name}}" name="{{$name}}" {{$multiple ? 'multiple': ''}}>
-    <option value="" {{!$value?'selected':''}} disabled hidden>Choose here</option>
-    @foreach($items as $key => $val)
-        <option value="{{$key}}" {{$value === $key?'selected':''}}>{{$val}}</option>
-    @endforeach
-</select>
+<?php
+$items = array_map(function ($key, $value) {
+    return [
+        'value' => $key,
+        'text' => $value,
+    ];
+},
+    array_keys($items),
+    array_values($items));
+?>
+
+<select-input {!!  count($errors) > 0 ? 'error="'.$errors[0].'"':null!!}
+              @foreach($attributes as $key => $value)
+                  @if($key === 'value')
+                      {!! ':'.$key.'="'.json_encode($value).'"' !!}
+                  @else
+                      {!! $key.'="'.$value.'"' !!}
+                  @endif
+              @endforeach
+              :items="{{json_encode($items)}}"
+></select-input>

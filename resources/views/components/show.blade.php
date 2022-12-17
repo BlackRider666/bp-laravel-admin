@@ -12,12 +12,7 @@
                     <input type="color" value="{{$value}}" disabled>
                 </td>
             @else
-                @if(array_key_exists('relation',$value))
-                    <?php $method = substr($key,0,-3).'_title'?>
-                    <td>{{$item->$method}}</td>
-                @else
-                    <td>{{$item->$key}}</td>
-                @endif
+                <td>{{$item->$key}}</td>
             @endif
         </tr>
     @endforeach

@@ -11,27 +11,15 @@
     @include('bpadmin::_partials.assets')
 </head>
 <body>
-<div class="page-wrapper">
-    <div class="page-inner">
-        @if(request()->is('admin/login'))
-            <div class="page-content-wrapper">
-                <main id="js-page-content" role="main" class="page-content">
-                    @yield('content')
-                </main>
-                @include('bpadmin::_partials.footer')
-            </div>
-        @else
-            @include('bpadmin::_partials.navbar')
-
-            <div class="page-content-wrapper">
-                @include('bpadmin::_partials.header')
-                <main id="js-page-content" role="main" class="page-content">
-                    @yield('content')
-                </main>
-                @include('bpadmin::_partials.footer')
-            </div>
-        @endif
-    </div>
+<div id="app">
+    <v-app>
+        @includeWhen(Auth::check(),'bpadmin::_partials.navbar')
+        @includeWhen(Auth::check(),'bpadmin::_partials.header')
+        <v-main>
+            @yield('content')
+            @includeWhen(Auth::check(),'bpadmin::_partials.footer')
+        </v-main>
+    </v-app>
 </div>
 @include('bpadmin::_partials.scripts')
 </body>

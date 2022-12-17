@@ -1,2 +1,6 @@
-<input type="hidden" name="{{$name}}" value="0">
-<input type="checkbox" class="custom-control-input" id="{{$name}}" name="{{$name}}" value="1" {{$value?'checked':''}}>
+<input type="hidden" name="{{$attributes['name']}}" value="false">
+<boolean-input {!!  count($errors) > 0 ? 'error="'.$errors[0].'"':null!!}
+@foreach($attributes as $key => $value)
+    {!! $key.'="'.$value.'"' !!}
+    @endforeach
+></boolean-input>

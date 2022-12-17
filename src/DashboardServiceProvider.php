@@ -65,13 +65,15 @@ class DashboardServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../resources/views' => resource_path('views/vendor/bpadmin'),
             __DIR__ . '/../public' => public_path('bpadmin'),
-            __DIR__ . '/../config' => config_path('bpadmin'),
+            __DIR__ . '/../config/dashboard.php' => config_path('bpadmin.php'),
             __DIR__ . '/../resources/lang' => resource_path('lang/vendor/bpadmin'),
+            __DIR__ . '/../resources/js' => resource_path('js/vendor/bpadmin'),
         ], 'bpadmin::all');
 
         $this->publishes([
             __DIR__ . '/../public' => public_path('bpadmin'),
-            __DIR__ . '/../config' => config_path('bpadmin'),
+            __DIR__ . '/../config/dashboard.php' => config_path('bpadmin.php'),
+            __DIR__ . '/../resources/lang' => resource_path('lang/vendor/bpadmin'),
         ], 'bpadmin::min');
     }
 

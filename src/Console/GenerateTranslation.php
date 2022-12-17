@@ -2,6 +2,7 @@
 
 namespace BlackParadise\LaravelAdmin\Console;
 
+use BlackParadise\LaravelAdmin\Core\TypeFromTable;
 use Illuminate\Console\Command;
 
 class GenerateTranslation extends Command
@@ -14,13 +15,15 @@ class GenerateTranslation extends Command
     {
         $this->info('Start generate translations!');
         $directoryPath = resource_path('lang/vendor/bpadmin/en');
-        foreach(config('bpadmin.dashboard.entities') as $key => $options) {
+        foreach(config('bpadmin.entities') as $key => $options) {
             $this->info('Generation for: '.ucfirst($key).' started!');
-            $fillables = (new $options['entity'])->getFillable();
+            $fillables = (new TypeFromTable())->getTypeList(new $options['entity']);
             $translation = '<?php'.PHP_EOL.' return ['.PHP_EOL;
-            foreach ($fillables as $field) {
-                $translation.= "\t"."'".$field."' => '".ucfirst($field)."',".PHP_EOL;
+            foreach ($fillables as $k => $value) {
+                $field = substr($k, -6) === 'method' ? substr($k, 0, -7) : $k;
+                $translation.= "\t"."'".$k."' => '".ucfirst($field)."',".PHP_EOL;
             }
+            $translation.= "\t"."'actions' => 'Actions',".PHP_EOL;
             $translation.='];';
             $path = $directoryPath.'/'.$key.'.php';
             file_put_contents($path, $translation);

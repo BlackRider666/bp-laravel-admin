@@ -58,34 +58,42 @@ class TypeFromTable
             ];
         }
         $reflector = new ReflectionClass($model);
+        $relationFields = [];
         foreach ($reflector->getMethods() as $reflectionMethod) {
             $returnType = $reflectionMethod->getReturnType();
             if ($returnType) {
                 if (in_array(class_basename($returnType->getName()), ['BelongsTo', 'BelongsToMany'])) {
                     $relName = $reflectionMethod->getName();
-                    $modelRel = (new $reflectionMethod->class())->$relName()->getRelated();
-                    $typeList[$reflectionMethod->getName().'_id']['relation'] = method_exists($modelRel,'forSelect') ?
-                        $modelRel->forSelect()
-                    :
-                        $modelRel->pluck('name', 'id');
-                    if(in_array(class_basename($returnType->getName()), ['BelongsToMany'])) {
-                        $typeList[$reflectionMethod->getName().'_id']['multiple'] = true;
+                    $typeList[$relName]['type'] = class_basename($returnType->getName());
+                    $typeList[$relName]['method'] = $relName;
+                    $relationFields[] = $relName;
+                    if(class_basename($returnType->getName()) == 'BelongsToMany') {
+                        $typeList[$relName]['multiple'] = true;
+                    } else {
+                        $typeList[$relName]['required'] = true;
                     }
                 }
             }
         }
         $fields = [];
-        $custom_fields = $model->createWithRel;
-        $fillables = !empty($custom_fields)?
-            array_merge($model->getFillable(),array_keys($custom_fields))
-            :
-            $model->getFillable();
-        foreach ($fillables as $modelType) {
-            if (!empty($custom_fields) &&array_key_exists($modelType,$custom_fields)) {
-                $fields[$modelType] = array_merge($typeList[$modelType],$custom_fields[$modelType]);
+        foreach ($model->getFillable() as $modelType) {
+            $fields[$modelType] = $typeList[$modelType];
+        }
+        foreach ($relationFields as $rel) {
+            if ($typeList[$rel]['type'] === 'BelongsTo') {
+                $fields[$rel.'_id'] = $typeList[$rel];
             } else {
-                $fields[$modelType] = $typeList[$modelType];
+                $fields[$rel.'_method'] = $typeList[$rel];
             }
+        }
+        return $fields;
+    }
+
+    public function getTypeListWithoutHidden(Model $model)
+    {
+        $fields = $this->getTypeList($model);
+        foreach ($model->getHidden() as $hidden) {
+            unset($fields[$hidden]);
         }
         return $fields;
     }
