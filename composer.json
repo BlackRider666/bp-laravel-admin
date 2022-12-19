@@ -20,7 +20,7 @@
         "BlackParadise\\LaravelAdmin\\": "src/"
     },
     "files": [
-      "BlackParadise\\LaravelAdmin\\helpers.php"
+      "src/helpers.php"
     ]
   }
 }
