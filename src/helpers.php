@@ -1,5 +1,4 @@
 <?php
-namespace BlackParadise\LaravelAdmin;
 
 if (!function_exists('bpadmin_navbar_format_items')) {
 
@@ -15,6 +14,14 @@ if (!function_exists('bpadmin_navbar_format_items')) {
             $patterns[$key][] = 'bpadmin.'.$key.'.create';
             $patterns[$key][] = 'bpadmin.'.$key.'.show';
             $patterns[$key][] = 'bpadmin.'.$key.'.edit';
+            if (array_key_exists('items',$value)) {
+                foreach ($value['items'] as $keySub => $valueSub){
+                    $patterns[$keySub][] = 'bpadmin.'.$keySub.'.index';
+                    $patterns[$keySub][] = 'bpadmin.'.$keySub.'.create';
+                    $patterns[$keySub][] = 'bpadmin.'.$keySub.'.show';
+                    $patterns[$keySub][] = 'bpadmin.'.$keySub.'.edit';
+                }
+            }
         }
         array_walk($items,  static function(&$item, $key) use ($patterns){
             $item['title'] = ucwords(str_replace('_',' ',$key));

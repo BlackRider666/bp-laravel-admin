@@ -68,7 +68,7 @@ class Form
             {
                 if (substr($key, -6) === 'method' && $value) {
                     $modelMethod = substr($key, 0,-7);
-                    $valueModel = $model->$modelMethod()->pluck('id')->toArray();
+                    $valueModel = $model->$modelMethod()->allRelatedIds()->toArray();
                 } else {
                     $valueModel = $model->$key;
                 }
