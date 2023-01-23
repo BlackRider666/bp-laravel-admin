@@ -8,7 +8,7 @@ class TableBuilder
 {
     private Table $table;
 
-    public function __construct(array $headers, LengthAwarePaginator $items, string $name, bool $searchable)
+    public function __construct(array $headers, $items, string $name, bool $searchable)
     {
         $this->table = new Table($headers, $name, $searchable);
         $this->table->setItems($items);

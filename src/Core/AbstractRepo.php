@@ -51,17 +51,16 @@ class AbstractRepo
     /**
      * @param array $data
      * @param array $fields
-     * @return LengthAwarePaginator
      */
-    public function search(array $data, array $fields): LengthAwarePaginator
+    public function search(array $data, array $fields = ['*'])
     {
-        $perPage = $data['perPage']?:10;
-        $sortBy = $data['sortBy']?:'id';
-        $page = $data['page']?:1;
-        $sortDesc = $data['sortDesc'] !== null;
+        $perPage = array_key_exists('perPage',$data) && $data['perPage']?$data['perPage']:10;
+        $sortBy = array_key_exists('sortBy',$data) && $data['sortBy']?$data['sortBy']:'id';
+        $page = array_key_exists('page',$data) && $data['page']?$data['page']:1;
+        $sortDesc = array_key_exists('sortDesc',$data) && $data['sortDesc'] !== null;
         $fields[] = 'id';
         $query = $this->query();
-        if ($data['q']) {
+        if (array_key_exists('q',$data) && $data['q']) {
             if (is_array($this->searchField)) {
                 $query->where(function($sub) use ($data){
                     foreach($this->searchField as $key => $field) {
@@ -77,6 +76,21 @@ class AbstractRepo
             }
         }
         $query->orderBy($sortBy,$sortDesc?'desc':'asc');
-        return $query->paginate($perPage,$fields,'page',$page);
+        $relations = array_filter(
+            array_map(function($item) {
+                if (count(explode('.',$item)) > 1) {
+                    return str_replace('.',':id,',$item);
+                }
+            },$fields)
+        );
+        $fieldsWithKey = array_map(function($item) {
+            $arrItem = explode('.',$item);
+            if (count($arrItem) > 1) {
+                return $arrItem[0] . '_id';
+            }
+            return $item;
+        },$fields);
+
+        return $query->with($relations)->paginate($perPage,$fieldsWithKey,'page',$page);
     }
 }

@@ -9,7 +9,7 @@ class Table
 
     private array $headers = [];
 
-    private LengthAwarePaginator $items;
+    private $items;
 
     private string $name;
     private bool $searchable;
@@ -43,7 +43,7 @@ class Table
     /**
      * @param LengthAwarePaginator $items
      */
-    public function setItems(LengthAwarePaginator $items): void
+    public function setItems($items): void
     {
         $this->items = $items;
     }
