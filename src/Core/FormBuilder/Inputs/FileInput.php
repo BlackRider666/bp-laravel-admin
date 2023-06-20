@@ -26,7 +26,7 @@ class FileInput implements InputInterface
             'front' => [],
             'back'  => ['file'],
         ];
-        if (array_key_exists('required',$attributes)) {
+        if (array_key_exists('required',$attributes) && $attributes['required']) {
             $this->rules['front'][] = 'required';
             $this->rules['back'][] = 'required';
             unset($attributes['required']);
