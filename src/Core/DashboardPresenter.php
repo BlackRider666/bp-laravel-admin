@@ -33,9 +33,11 @@ class DashboardPresenter
             $items = $items->toArray();
             $entity = new $entityArray['entity'];
             $items['data'] = array_map(function ($item) use ($headers, $entity) {
-                foreach(array_intersect($entity->translatable, $headers) as $transField)
-                {
-                    $item[$transField] = $item[$transField]?$item[$transField][config('bpadmin.languages')[0]]:null;
+                if ($entity->translatable) {
+                    foreach(array_intersect($entity->translatable, $headers) as $transField)
+                    {
+                        $item[$transField] = $item[$transField]?$item[$transField][config('bpadmin.languages')[0]]:null;
+                    }
                 }
                 return $item;
             },$items['data']);
