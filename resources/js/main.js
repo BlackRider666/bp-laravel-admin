@@ -19,5 +19,8 @@ new Vue({
         'submit-input': require('./components/inputs/SubmitInput').default,
         'text-input': require('./components/inputs/TextInput').default,
         'file-input': require('./components/inputs/FileInput').default,
+        'translatable-input': require('./components/inputs/TranslatableInput').default,
+        'editor-input': require('./components/inputs/EditorInput').default,
+        'translatable-editor-input': require('./components/inputs/TranslatableEditorInput').default,
     }
 })

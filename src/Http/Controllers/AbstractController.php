@@ -64,10 +64,10 @@ class AbstractController extends Controller
         }
         $form = new Form([],$model,$name);
         $rules = array_key_exists('store_rules',$entityArray)? $entityArray['store_rules']:[];
-
         $validator = $form->validate($request->all(),$rules);
 
         if ($validator->fails()) {
+            \Log::info($validator->errors()->messages());
             return redirect()->back()->withErrors($validator->errors()->messages())->withInput();
         }
 

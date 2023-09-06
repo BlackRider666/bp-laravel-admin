@@ -15,6 +15,9 @@ use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\PasswordInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\StringInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\SubmitInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TextInput;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TranslatableInput;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TranslatableEditorInput;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\EditorInput;
 use BlackParadise\LaravelAdmin\Core\TypeFromTable;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Model;
@@ -38,6 +41,9 @@ class Form
         //date
         //phone
         'file'          =>  FileInput::class,
+        'translatable'  =>  TranslatableInput::class,
+        'translatableEditor'  =>  TranslatableEditorInput::class,
+        'editor'        =>  EditorInput::class,
     ];
     private array $attributes = [
         'justify'   =>  'center',
@@ -70,7 +76,11 @@ class Form
                     $modelMethod = substr($key, 0,-7);
                     $valueModel = $model->$modelMethod()->allRelatedIds()->toArray();
                 } else {
-                    $valueModel = $model->$key;
+                    if (!in_array($value['type'],['translatable','translatableEditor'])) {
+                        $valueModel = $model->$key;
+                    } else {
+                        $valueModel = $model->getTranslations($key);
+                    }
                 }
                 if (in_array($value['type'],['BelongsTo', 'BelongsToMany'])) {
                     $modelMethod = $value['method'];
@@ -187,7 +197,13 @@ class Form
         if (empty($rules)) {
             $fields = collect($this->fields);
             $rules = $fields->map(function($item) {
-                return [$item->getName() => $item->getRules()];
+                if (!in_array($item->getType(),['translatable','translatableEditor'])) {
+                    return [$item->getName() => $item->getRules()];
+                }
+                return [
+                    $item->getName() => 'array',
+                    $item->getName().'.*' => $item->getRules(),
+                ];
             })->collapse()->toArray();
         }
         return Validator::make($data,$rules);

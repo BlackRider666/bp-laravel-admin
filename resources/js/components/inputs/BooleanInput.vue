@@ -1,11 +1,13 @@
 <template>
-  <v-checkbox
-    ref="checkbox"
-    :input-value="Boolean(parseInt(value))"
-    :value="true"
-    :name="name"
-    :label="label"
-  ></v-checkbox>
+    <v-checkbox
+        ref="checkbox"
+        :input-value="parseInt(value)"
+        :false-value="0"
+        :true-value="1"
+        :name="name"
+        :label="label"
+        :value="1"
+    ></v-checkbox>
 </template>
 
 <script>

@@ -6,6 +6,8 @@ use Throwable;
 
 class BooleanInput implements InputInterface
 {
+    use GetTypeTrait;
+
     private array $attributes = [];
     private array $errors;
     private array $rules;

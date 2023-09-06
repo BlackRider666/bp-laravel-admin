@@ -6,6 +6,8 @@ use Throwable;
 
 class HiddenInput implements InputInterface
 {
+    use GetTypeTrait;
+
     private array $attributes = [];
 
     public function __construct(array $attributes)

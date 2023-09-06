@@ -4,6 +4,8 @@ namespace BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs;
 
 class TextInput implements InputInterface
 {
+    use GetTypeTrait;
+
     private array $attributes = [];
     private array $errors;
     private array $rules;

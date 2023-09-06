@@ -32,6 +32,7 @@ class TypeFromTable
                 case 'date':
                 case 'time':
                 case 'guid':
+                case 'json':
                 case 'datetimetz':
                 case 'datetime':
                 case 'decimal':
@@ -86,6 +87,17 @@ class TypeFromTable
                 $fields[$rel.'_method'] = $typeList[$rel];
             }
         }
+        if ($model->translatable) {
+            foreach ($model->translatable as $transField) {
+                $fields[$transField]['type'] = 'translatable';
+            }
+        }
+        if ($model->editable) {
+            foreach ($model->editable as $editableField) {
+                $fields[$editableField]['type'] = $fields[$editableField]['type'] === 'translatable'?'translatableEditor':'editor';
+            }
+        }
+
         return $fields;
     }
 

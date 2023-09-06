@@ -6,6 +6,8 @@ use BlackParadise\LaravelAdmin\Core\PathManager;
 
 class FileInput implements InputInterface
 {
+    use GetTypeTrait;
+
     private array $attributes = [];
     private array $errors;
     private array $rules;

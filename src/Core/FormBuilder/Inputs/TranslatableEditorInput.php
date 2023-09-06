@@ -2,39 +2,41 @@
 
 namespace BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs;
 
-class BelongsToInput implements InputInterface
+class TranslatableEditorInput implements InputInterface
 {
     use GetTypeTrait;
 
     private array $attributes = [];
-    private array $items;
     private array $errors;
-    private array $rules = [
-        'front' => [],
-        'back'  => [],
-    ];
-    public function __construct(array $attributes, string $entity, array $errors)
+    private array $rules;
+
+    public function __construct(array $attributes, string $entity, array $errors, array $rules = [])
     {
-        $this->items = $attributes['items']->toArray();
-        unset($attributes['items'], $attributes['type']);
-        $this->attributes['multiple'] = array_key_exists('multiple', $attributes) && $attributes['multiple']?'true':'false';
         $this->attributes['label'] = trans('bpadmin::'.$entity.'.'.$attributes['name']);
         $this->attributes['value'] = old($attributes['name']);
+        $this->rules = !empty($rules)? $rules : [
+            'front' => [],
+            'back'  => ['string'],
+        ];
+        if ($attributes['required']) {
+            $this->rules['front'][] = 'required';
+            $this->rules['back'][] = 'required';
+            unset($attributes['required']);
+        }
         $this->attributes = array_merge($this->attributes,$attributes);
         $this->errors = $errors;
     }
 
     /**
      * @return string
+     * @throws Throwable
      */
     public function render(): string
     {
-        $view = view('bpadmin::components.inputs.select', [
-            'attributes'    => $this->attributes,
-            'items'         => $this->items,
-            'errors'        => $this->errors,
+        $view =  view('bpadmin::components.inputs.translatableEditor', [
+            'attributes' => $this->attributes,
+            'errors' => $this->errors,
         ]);
-
         return $view->render();
     }
 

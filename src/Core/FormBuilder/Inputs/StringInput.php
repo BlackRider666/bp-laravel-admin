@@ -7,6 +7,8 @@ use Throwable;
 
 class StringInput implements InputInterface
 {
+    use GetTypeTrait;
+
     private array $attributes = [];
     private array $errors;
     private array $rules;

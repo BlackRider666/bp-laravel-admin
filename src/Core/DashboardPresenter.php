@@ -30,6 +30,15 @@ class DashboardPresenter
             $searchable = array_key_exists('search', $entityArray);
             $headers = $entityArray['table_headers'];
             $items = (new AbstractRepo($entityArray['entity'], $searchable?$entityArray['search']:null))->search($data, $headers);
+            $items = $items->toArray();
+            $entity = new $entityArray['entity'];
+            $items['data'] = array_map(function ($item) use ($headers, $entity) {
+                foreach(array_intersect($entity->translatable, $headers) as $transField)
+                {
+                    $item[$transField] = $item[$transField]?$item[$transField][config('bpadmin.languages')[0]]:null;
+                }
+                return $item;
+            },$items['data']);
             $headers[] = 'actions';
             return (new PageBuilder('bpadmin::layout.crud',ucfirst($name),[
                 (new TableBuilder($headers,$items, $name, $searchable))->render(),

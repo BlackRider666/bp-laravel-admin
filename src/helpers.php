@@ -58,3 +58,19 @@ if (!function_exists('bpadmin_select_format_items')) {
         return $items;
     }
 }
+
+if (!function_exists('bpadmin_object_translatable_field')) {
+
+    /**
+     * @param array $items
+     * @return array|array[]
+     */
+    function bpadmin_object_translatable_field(array $items): array
+    {
+        $res = [];
+        foreach ($items as $item) {
+            $res[$item] = '';
+        }
+        return $res;
+    }
+}

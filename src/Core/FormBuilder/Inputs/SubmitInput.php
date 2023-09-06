@@ -4,6 +4,8 @@ namespace BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs;
 
 class SubmitInput implements InputInterface
 {
+    use GetTypeTrait;
+
     private array $attributes = [];
 
     public function __construct(array $attributes = [])
