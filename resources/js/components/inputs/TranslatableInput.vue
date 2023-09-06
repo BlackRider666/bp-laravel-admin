@@ -1,5 +1,4 @@
 <template>
-    <template>
         <div>
             <template v-for="lang in languages">
                 <v-text-field
@@ -20,8 +19,7 @@ export default {
     name: "TranslatableInput",
     props: {
         value: {
-            type: String,
-            default: false
+            type: Object,
         },
         name: {
             type: String,
@@ -41,7 +39,7 @@ export default {
         languages: {
             type: Array,
         }
-    },
+    }
 }
 </script>
 

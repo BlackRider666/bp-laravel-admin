@@ -1,5 +1,6 @@
 <template>
     <div class="py-4 fullEditor-container">
+        <input type="hidden" :name="name" :value="value"/>
         <div ref="fullEditor"></div>
     </div>
 </template>
@@ -13,7 +14,7 @@ export default {
     name: "EditorInput",
     props: {
         value: {
-            type: Object,
+            type: String,
         },
         name: {
             type: String,
@@ -24,12 +25,12 @@ export default {
             default: ''
         },
         error: {
+            type: Boolean,
+            default: false,
+        },
+        errorMessages: {
             type: String,
-            default: null
-        },
-        step:{
-            default:null,
-        },
+        }
     },
     data() {
         return {

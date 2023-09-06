@@ -3,8 +3,12 @@
         @if($key !== 'value')
             {!! $key.'="'.$value.'"' !!}
         @else
-            {!! $key.'="'.($value?json_encode($value):json_encode('{}')).'"' !!}
+            @if($value)
+                {!! ":".$key."='".json_encode($value)."'" !!}
+            @else
+                {!! ":".$key."='".json_encode(bpadmin_object_translatable_field(config('bpadmin.languages')))."'" !!}
+            @endif
         @endif
     @endforeach
-    :languanges='{{json_encode(config('bpadmin.languages'))}}'
-/>
+    :languages='{{json_encode(config('bpadmin.languages'))}}'
+></translatable-input>
