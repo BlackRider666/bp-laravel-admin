@@ -9,10 +9,9 @@
       "email": "loverider2012@gmail.com"
     }
   ],
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "require": {
-      "laravel/framework": "^6.0",
-      "doctrine/dbal": "^2.3",
+      "laravel/framework": "^11.0",
       "intervention/image": "^2.6"
   },
   "autoload": {
