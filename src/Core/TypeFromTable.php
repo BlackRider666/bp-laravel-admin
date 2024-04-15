@@ -7,6 +7,7 @@ namespace BlackParadise\LaravelAdmin\Core;
 use ErrorException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Schema;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -19,24 +20,34 @@ class TypeFromTable
     public function getTypeList(Model $model): array
     {
         $table = $model->getConnection()->getTablePrefix() . $model->getTable();
-        $schema = $model->getConnection()->getDoctrineSchemaManager();
-        $columns = $schema->listTableColumns($table);
+        $columns = Schema::getColumns($table);
         $typeList = [];
-        $casts = $model->getCasts();
         foreach ($columns as $column) {
-            $name = $column->getName();
-            $type = $column->getType()->getName();
+            $name = $column['name'];
+            $type = $column['type_name'];
             switch ($type) {
                 case 'string':
-                case 'text':
-                case 'date':
-                case 'time':
+                case 'varchar':
                 case 'guid':
                 case 'json':
+                    $type = 'string';
+                    break;
+                case 'text':
+                    $type = 'text';
+                    break;
+                case 'date':
+                    $type = 'date';
+                    break;
+                case 'time':
+                    $type = 'time';
+                    break;
                 case 'datetimetz':
                 case 'datetime':
+                    $type = 'datetime';
+                    break;
+                case 'float':
                 case 'decimal':
-                    $type = 'string';
+                    $type = 'float';
                     break;
                 case 'integer':
                 case 'bigint':
@@ -46,16 +57,13 @@ class TypeFromTable
                 case 'boolean':
                     $type = 'boolean';
                     break;
-                case 'float':
-                    $type = 'float';
-                    break;
                 default:
                     $type = 'mixed';
                     break;
             }
             $typeList[$name] = [
-                'type'  =>  array_key_exists($name,$casts)?$casts[$name]:$type,
-                'required'  =>  $column->getNotnull(),
+                'type'  =>  $type,
+                'required'  =>  !$column['nullable'],
             ];
         }
         $reflector = new ReflectionClass($model);
@@ -97,7 +105,6 @@ class TypeFromTable
                 $fields[$editableField]['type'] = $fields[$editableField]['type'] === 'translatable'?'translatableEditor':'editor';
             }
         }
-
         return $fields;
     }
 
