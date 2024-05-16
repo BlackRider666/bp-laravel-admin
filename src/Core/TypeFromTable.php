@@ -4,12 +4,14 @@
 namespace BlackParadise\LaravelAdmin\Core;
 
 
+use Doctrine\DBAL\Types\Type;
 use ErrorException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Schema;
 use ReflectionClass;
 use ReflectionMethod;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Types\Types;
 
 class TypeFromTable
 {
@@ -20,50 +22,54 @@ class TypeFromTable
     public function getTypeList(Model $model): array
     {
         $table = $model->getConnection()->getTablePrefix() . $model->getTable();
-        $columns = Schema::getColumns($table);
+        $config = config('database.connections.mysql');
+        $connectionParams = [
+            'dbname' => $config['database'],
+            'user' => $config['username'],
+            'password' => $config['password'],
+            'host' => $config['host'],
+            'driver' => 'pdo_mysql',
+            'charset' => $config['charset'],
+        ];
+        $conn = DriverManager::getConnection($connectionParams);
+        $schema = $conn->createSchemaManager();
+        $columns = $schema->listTableColumns($table);
         $typeList = [];
+        $casts = $model->getCasts();
         foreach ($columns as $column) {
-            $name = $column['name'];
-            $type = $column['type_name'];
+            $name = $column->getName();
+            $type = Type::getTypeRegistry()->lookupName($column->getType());
             switch ($type) {
-                case 'string':
-                case 'varchar':
-                case 'guid':
-                case 'json':
+                case Types::STRING:
+                case Types::TEXT:
+                case Types::DATE_MUTABLE:
+                case Types::TIME_MUTABLE:
+                case Types::GUID:
+                case Types::JSON:
+                case Types::DATETIMETZ_MUTABLE:
+                case Types::DATETIME_MUTABLE:
                     $type = 'string';
                     break;
-                case 'text':
-                    $type = 'text';
-                    break;
-                case 'date':
-                    $type = 'date';
-                    break;
-                case 'time':
-                    $type = 'time';
-                    break;
-                case 'datetimetz':
-                case 'datetime':
-                    $type = 'datetime';
-                    break;
-                case 'float':
-                case 'decimal':
-                    $type = 'float';
-                    break;
-                case 'integer':
-                case 'bigint':
-                case 'smallint':
+                case Types::INTEGER:
+                case Types::BIGINT:
+                case Types::SMALLINT:
                     $type = 'integer';
                     break;
-                case 'boolean':
+                case Types::BOOLEAN:
                     $type = 'boolean';
+                    break;
+                case Types::FLOAT:
+                case Types::DECIMAL:
+                    $type = 'float';
                     break;
                 default:
                     $type = 'mixed';
                     break;
             }
+
             $typeList[$name] = [
-                'type'  =>  $type,
-                'required'  =>  !$column['nullable'],
+                'type' => array_key_exists($name, $casts) ? $casts[$name] : $type,
+                'required' => $column->getNotnull(),
             ];
         }
         $reflector = new ReflectionClass($model);
@@ -105,6 +111,7 @@ class TypeFromTable
                 $fields[$editableField]['type'] = $fields[$editableField]['type'] === 'translatable'?'translatableEditor':'editor';
             }
         }
+
         return $fields;
     }
 

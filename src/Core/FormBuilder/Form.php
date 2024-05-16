@@ -18,6 +18,7 @@ use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TextInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TranslatableInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TranslatableEditorInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\EditorInput;
+use BlackParadise\LaravelAdmin\Core\Models\BPModel;
 use BlackParadise\LaravelAdmin\Core\TypeFromTable;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Model;
@@ -34,7 +35,7 @@ class Form
         'integer'   =>  IntegerInput::class,
         'string'    =>  StringInput::class,
         'text'      =>  TextInput::class,
-        'password'  =>  PasswordInput::class,
+        'hashed'  =>  PasswordInput::class,
         'submit'    =>  SubmitInput::class,
         'BelongsTo' =>  BelongsToInput::class,
         'BelongsToMany' =>  BelongsToInput::class,
@@ -50,24 +51,19 @@ class Form
         'align'     =>  'center',
         'enctype'   =>  'multipart/form-data'
     ];
-    private array $fields = [];
+    public array $fields = [];
     private string $entityName;
     private ?Model $model;
 
-    public function __construct(array $attributes, Model $model = null, string $entityName = 'search', array $availableTypes = [])
+    public function __construct(array $attributes, Model $model = null, BPModel $BPModel = null)
     {
         $this->attributes = array_merge($this->attributes,$attributes);
-        $this->availableTypes = array_merge($this->availableTypes,$availableTypes);
-        $this->entityName = $entityName;
-        if ($model) {
+        $this->entityName = $BPModel? $BPModel->name:'search';
+        if ($BPModel) {
             if (!$model->exists) {
-                $fields =  Cache::rememberForever($this->entityName.'.store', static function () use ($model) {
-                    return (new TypeFromTable())->getTypeList($model);
-                });
+                $fields = $BPModel->getFields();
             } else {
-                $fields =  Cache::rememberForever($this->entityName.'.update', static function () use ($model) {
-                    return (new TypeFromTable())->getTypeListWithoutHidden($model);
-                });
+                $fields =  $BPModel->getFieldsWithoutHidden();
             }
             $errors = session()->get('errors', app(ViewErrorBag::class))->messages();
             foreach ($fields as $key => $value)
@@ -92,10 +88,23 @@ class Form
                 } else {
                     $items = null;
                 }
-                $attrField = array_merge($value,['name' => $key, 'value' => $valueModel, 'model_id' => $model->getKey(), 'items' => $items]);
+
+                $attrUpdated = [
+                    'name' => $key,
+                    'value' => $valueModel,
+                    'model_id' => $model->getKey(),
+                    'items' => $items
+                ];
+
+                if (!$valueModel) {
+                    unset($attrUpdated['value']);
+                }
+
+                $attrField = array_merge($value,$attrUpdated);
                 $attrErrors = array_key_exists($key,$errors)?$errors[$key]:[];
                 if (array_key_exists($value['type'], $this->availableTypes)) {
                     if($value['type'] === 'file') {
+                        $attrField['path'] = $BPModel->filePath;
                     }
                     $this->addField(new $this->availableTypes[$value['type']](
                         $attrField,
@@ -192,20 +201,26 @@ class Form
         return (new SubmitInput(['label' => $this->attributes['submit_label']]))->render();
     }
 
-    public function validate(array $data, array $rules = [])
+    public function getRules($model = null)
     {
-        if (empty($rules)) {
-            $fields = collect($this->fields);
-            $rules = $fields->map(function($item) {
-                if (!in_array($item->getType(),['translatable','translatableEditor'])) {
-                    return [$item->getName() => $item->getRules()];
+        $fields = collect($this->fields);
+        return $rules = $fields->map(function($item) use ($model){
+            if (!in_array($item->getType(),['translatable','translatableEditor'])) {
+                $rules = $item->getRules();
+                if (in_array('file',$rules) && in_array('required', $rules) && $model) {
+                    $rules = array_map(function ($rule) {
+                        if ($rule !== 'required') {
+                            return $rule;
+                        }
+                    },$rules);
+                    $rules = array_filter($rules);
                 }
-                return [
-                    $item->getName() => 'array',
-                    $item->getName().'.*' => $item->getRules(),
-                ];
-            })->collapse()->toArray();
-        }
-        return Validator::make($data,$rules);
+                return [$item->getName() => $rules];
+            }
+            return [
+                $item->getName() => 'array',
+                $item->getName().'.*' => $item->getRules(),
+            ];
+        })->collapse()->toArray();
     }
 }

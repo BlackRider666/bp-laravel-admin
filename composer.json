@@ -12,7 +12,8 @@
   "minimum-stability": "stable",
   "require": {
       "laravel/framework": "^11.0",
-      "intervention/image": "^2.6"
+      "intervention/image": "^2.6",
+      "doctrine/dbal": "^4.0"
   },
   "autoload": {
     "psr-4": {

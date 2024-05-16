@@ -1,0 +1,26 @@
+<?php
+
+namespace App\BPAdmin;
+
+use BlackParadise\LaravelAdmin\Core\Models\BPModel;
+
+class {{className}} extends BPModel
+{
+    public string $model = \{{modelPath}}::class;
+
+    public string $name = '{{name}}';
+
+    public array $fieldTypes = {{fieldTypes}};
+
+    public array $searchFields = [
+        {{searchFields}}
+    ];
+
+    public array $tableHeaderFields = [
+        '{{tableHeaderFields}}'
+    ];
+
+    public array $showPageFields = [
+        '{{showPageFields}}'
+    ];
+}

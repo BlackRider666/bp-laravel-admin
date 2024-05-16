@@ -15,9 +15,9 @@ class FileInput implements InputInterface
     public function __construct(array $attributes, string $entity, array $errors, array $rules = [])
     {
         $this->attributes['label'] = trans('bpadmin::'.$entity.'.'.$attributes['name']);
-        if ($attributes['value']) {
+        if (array_key_exists('value', $attributes)) {
             $pathManager = new PathManager();
-            $path = $entity.'_'.$attributes['name'];
+            $path = $attributes['path'].'/'.$attributes['name'];
             $thumb = $attributes['value'];
             $attributes['value'] = $pathManager->getFile($thumb,$path);
             $attributes['typeFile'] = $pathManager->getTypeFile($thumb,$path);

@@ -16,12 +16,12 @@ class EntityExistMiddleware
             $request->merge([
                 'entity_name'  =>  $name,
             ]);
-            $entity = config('bpadmin.entities')[$name]['entity'];
-            app()->bind('Illuminate\Database\Eloquent\Model', function() use($entity,$id){
-                if ($id !== 0) {
-                    return (new $entity())->find($id);
-                }
-                return new $entity();
+            $className = snakeToPascalCase($name);
+            app()->bind('BlackParadise\LaravelAdmin\Core\Models\BPModel', function() use($className,$id){
+//                if ($id !== 0) {
+//                    return (new $entity())->find($id);
+//                }
+                return new ("\App\BPAdmin\\".$className)();
             });
             return $next($request);
         } else {

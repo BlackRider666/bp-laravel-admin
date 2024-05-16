@@ -35,9 +35,9 @@ class AbstractRepo
      * @param int $id
      * @return Model|null
      */
-    public function find(int $id): ?Model
+    public function find(int $id, array $fields = ['*']): ?Model
     {
-        return $this->query()->find($id);
+        return $this->query()->find($id,$fields);
     }
 
     /**
@@ -52,13 +52,15 @@ class AbstractRepo
      * @param array $data
      * @param array $fields
      */
-    public function search(array $data, array $fields = ['*'])
+    public function search(array $data, array $fields = ['*']): LengthAwarePaginator
     {
         $perPage = array_key_exists('perPage',$data) && $data['perPage']?$data['perPage']:10;
         $sortBy = array_key_exists('sortBy',$data) && $data['sortBy']?$data['sortBy']:'id';
         $page = array_key_exists('page',$data) && $data['page']?$data['page']:1;
         $sortDesc = array_key_exists('sortDesc',$data) && $data['sortDesc'] !== null;
-        $fields[] = 'id';
+        if (!in_array('id', $fields)){
+            $fields[] = 'id';
+        }
         $query = $this->query();
         if (array_key_exists('q',$data) && $data['q']) {
             if (is_array($this->searchField)) {

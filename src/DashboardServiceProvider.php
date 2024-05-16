@@ -3,6 +3,7 @@
 
 namespace BlackParadise\LaravelAdmin;
 
+use BlackParadise\LaravelAdmin\Console\Install;
 use BlackParadise\LaravelAdmin\Http\Middleware\AdminAuth;
 use BlackParadise\LaravelAdmin\Http\Middleware\EntityExistMiddleware;
 use Illuminate\Support\ServiceProvider;
@@ -53,6 +54,7 @@ class DashboardServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 GenerateTranslation::class,
+                Install::class,
             ]);
         }
     }

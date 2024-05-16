@@ -74,3 +74,14 @@ if (!function_exists('bpadmin_object_translatable_field')) {
         return $res;
     }
 }
+
+if (!function_exists('snakeToPascalCase')) {
+
+    /**
+     * @param string $string
+     * @return string
+     */
+    function snakeToPascalCase($string) {
+        return str_replace('_', '', ucwords($string, '_'));
+    }
+}
