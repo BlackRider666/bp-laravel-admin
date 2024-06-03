@@ -9,7 +9,7 @@ class EmailInput extends StringInput
         $attributes['type'] = 'email';
         $unique = 'unique:' . $entity;
         if (array_key_exists('value',$attributes)) {
-            $unique .=','.$attributes['name'].','.$attributes['model_id'] .','. config('bpadmin.entities')[$entity]['key'];
+            $unique .=','.$attributes['name'].','.$attributes['model_id'] .','. $attributes['key_model'];
         }
         $rules = !empty($rules)? $rules : [
             'front' => ['max:255'],

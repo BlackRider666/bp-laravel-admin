@@ -51,6 +51,7 @@ class DashboardPresenter
      */
     public function getShowPage(Model $item, array $fields, string $name): View
     {
+
         return (new PageBuilder('bpadmin::layout.crud',ucfirst($name).' '.$item->getKey(),[
             view('bpadmin::components.show', [
                 'fields' => array_flip($fields),

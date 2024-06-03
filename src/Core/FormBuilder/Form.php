@@ -93,7 +93,8 @@ class Form
                     'name' => $key,
                     'value' => $valueModel,
                     'model_id' => $model->getKey(),
-                    'items' => $items
+                    'items' => $items,
+                    'key_model' => $BPModel::$key,
                 ];
 
                 if (!$valueModel) {
@@ -106,7 +107,8 @@ class Form
                     if($value['type'] === 'file') {
                         $attrField['path'] = $BPModel->filePath;
                     }
-                    $this->addField(new $this->availableTypes[$value['type']](
+
+                    $this->addField(new ($this->availableTypes[$value['type']])(
                         $attrField,
                         $this->entityName,
                         $attrErrors,

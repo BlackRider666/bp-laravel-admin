@@ -37,7 +37,22 @@ class AbstractRepo
      */
     public function find(int $id, array $fields = ['*']): ?Model
     {
-        return $this->query()->find($id,$fields);
+        $relations = array_filter(
+            array_map(function($item) {
+                if (count(explode('.',$item)) > 1) {
+                    return str_replace('.',':id,',$item);
+                }
+            },$fields)
+        );
+        $fieldsWithKey = array_map(function($item) {
+            $arrItem = explode('.',$item);
+            if (count($arrItem) > 1) {
+                return $arrItem[0] . '_id';
+            }
+            return $item;
+        },$fields);
+
+        return $this->query()->with($relations)->find($id,$fieldsWithKey);
     }
 
     /**

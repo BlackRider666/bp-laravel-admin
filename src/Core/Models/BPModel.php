@@ -17,7 +17,7 @@ class BPModel
 
     public string $name;
 
-    protected static string $key = 'id';
+    public static string $key = 'id';
 
     public string $filePath = '';
 
@@ -97,7 +97,7 @@ class BPModel
     {
         $fields = array_keys($this->getFieldsWithoutHidden());
         $fields = array_filter($fields,function ($field) {
-            return substr($field, -6) !== 'method';
+            return substr($field, -6) !== 'method' && $field;
         });
         $fields[] = 'id';
         $item = $this->findQuery($id, $fields);
@@ -127,7 +127,10 @@ class BPModel
     {
         $fields = array_keys($this->getFieldsWithoutHidden());
         $fields[] = 'id';
-        $model = $this->findQuery($id, $fields);
+        $fieldsToFind = array_filter($fields, function($item) {
+            return substr($item, -6) !== 'method' && $item;
+        },1);
+        $model = $this->findQuery($id, $fieldsToFind);
         $model->update($data);
         $methods = array_filter($data, function($item,$key) {
             return substr($key, -6) === 'method' && $item;
@@ -158,11 +161,14 @@ class BPModel
         if ($this->rules['update'] !== null) {
             return $this->rules['update'];
         }
-        $model = $fields = array_keys($this->getFieldsWithoutHidden());
+        $fields = array_keys(array_filter($this->getFieldsWithoutHidden(), function($item,$key) {
+            return substr($key, -6) !== 'method' && $item;
+        },1));
         $fields[] = 'id';
         $item = $this->findQuery($id, $fields);
         $form = new Form([],$item,$this);
-        return $form->getRules($item);
+        $rules = $form->getRules($item);
+        return $rules;
     }
 
     public function delete(int $id)

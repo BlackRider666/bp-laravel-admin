@@ -12,7 +12,24 @@
                     <input type="color" value="{{$value}}" disabled>
                 </td>
             @else
-                <td>{{$item->$key}}</td>
+                @php
+                    $parts = explode('.', $key);
+                    $reference = $item;
+                @endphp
+
+                @foreach($parts as $part)
+                    @if(is_object($reference) && isset($reference->$part))
+                        @php
+                            $reference = $reference->$part;
+                        @endphp
+                    @else
+                        @php
+                            $reference = null;
+                        @endphp
+                        @break
+                    @endif
+                @endforeach
+                <td>{{$reference}}</td>
             @endif
         </tr>
     @endforeach
