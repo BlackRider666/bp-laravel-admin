@@ -76,7 +76,7 @@ class DashboardServiceProvider extends ServiceProvider
             __DIR__ . '/../public' => public_path('/'),
             __DIR__ . '/../config/dashboard.php' => config_path('bpadmin.php'),
             __DIR__ . '/../resources/lang' => resource_path('lang/vendor/bpadmin'),
-        ], 'bpadmin::min');
+        ], 'laravel-assets');
     }
 
     /**
