@@ -2,47 +2,23 @@
 
 namespace BlackParadise\LaravelAdmin\Http\Requests;
 
-use BlackParadise\LaravelAdmin\Core\Models\BPModel;
-use BlackParadise\LaravelAdmin\Core\StorageManager;
-use Illuminate\Foundation\Http\FormRequest;
+use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\Form;
 
-class UpdateAbstractEntityRequest extends FormRequest
+class UpdateAbstractEntityRequest extends BaseAbstractEntityRequest
 {
-    private BpModel $BPModel;
-
-    public function __construct(BPModel $BPModel)
-    {
-        $this->BPModel = $BPModel;
-    }
-
     public function rules():array
     {
-        $rules = $this->BPModel->getUpdateRules((int)$this->id);
-        return $rules;
-    }
-
-    protected function failedValidation($validator)
-    {
-        \Log::info($validator->errors()->messages());
-        parent::failedValidation($validator);
-    }
-
-    protected function passedValidation()
-    {
-        $fields = $this->BPModel->getFileFields();
-        $fields[] = 'id';
-        $model = $this->BPModel->findQuery($this->id, $fields);
-        $path = $this->BPModel->filePath;
-        $validatedData = $this->validator->validated();
-        foreach ($this->allFiles() as $key => $value) {
-            if (in_array($key,$fields)) {
-                if ($model->$key !== null) {
-                    (new StorageManager())->deleteFile($model->$key,$path.'/'.$key);
-                }
-                $validatedData[$key] = (new StorageManager())
-                    ->saveFile($value,$path.'/'.$key);
-            }
+        if ($this->BPModel->rules['update'] !== null) {
+            return $this->BPModel->rules['update'];
         }
-        $this->validator->setData($validatedData);
+
+        $fields = array_keys(array_filter($this->BPModel->getFieldsWithoutHidden(), static function($item, $key) {
+            return !str_ends_with($key, 'method') && $item;
+        },1));
+        $fields[] = 'id';
+
+        $item = $this->BPModel->findQuery($this->id, $fields);
+
+        return (new Form([], $item, $this->BPModel))->getRules($item);
     }
 }

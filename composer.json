@@ -1,7 +1,7 @@
 {
   "name": "black-paradise/laravel-admin",
   "description": "Generate Admin Panel for Laravel",
-  "type": "project",
+  "type": "library",
   "license": "MIT",
   "authors": [
     {
@@ -21,6 +21,22 @@
     },
     "files": [
       "src/helpers.php"
+    ]
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "BlackParadise\\LaravelAdmin\\DashboardServiceProvider"
+      ]
+    }
+  },
+  "scripts": {
+    "post-package-install": [
+      "php artisan vendor:publish --tag=bpadmin::min",
+      "echo 'The \"black-paradise/laravel-admin\" package has been successfully installed!'",
+      "echo 'Minimal files have been published.'",
+      "echo 'Please configure the config file config/bpadmin.php and run the following command to complete the installation:'",
+      "echo 'php artisan bpadmin:install'"
     ]
   }
 }

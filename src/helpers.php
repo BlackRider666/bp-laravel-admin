@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\RedirectResponse;
+
 if (!function_exists('bpadmin_navbar_format_items')) {
 
     /**
@@ -83,5 +85,17 @@ if (!function_exists('snakeToPascalCase')) {
      */
     function snakeToPascalCase($string) {
         return str_replace('_', '', ucwords($string, '_'));
+    }
+}
+
+if (!function_exists('redirectToIndexModelPage')) {
+
+    /**
+     * @param string $name
+     * @return RedirectResponse
+     */
+    function redirectToIndexModelPage(string $name): RedirectResponse
+    {
+        return redirect()->route('bpadmin.'.$name.'.index');
     }
 }

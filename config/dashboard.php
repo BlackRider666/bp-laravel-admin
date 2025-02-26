@@ -6,23 +6,7 @@ return [
     'languages'     => ['en'],
 
     'entities' => [
-        'users' => [
-            'type'      =>  'default',
-            'entity'    =>  \App\User::class,
-            'key'       =>  'id',
-            'paginate'  =>  10,
-            'search'    =>  ['name','email'],
-            'show_title' => 'User Information',
-            'table_headers'   =>  [
-                'name','email'
-            ],
-            'show_fields'   => [
-                'name',
-                'email',
-                'role_id',
-            ],
-            'validation_type' => 'default',
-        ],
+        'users' => \App\User::class,
     ],
     'menu' => [
         'users' => [

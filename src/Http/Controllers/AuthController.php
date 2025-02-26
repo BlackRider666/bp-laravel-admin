@@ -3,20 +3,26 @@
 
 namespace BlackParadise\LaravelAdmin\Http\Controllers;
 
-use BlackParadise\LaravelAdmin\Core\FormBuilder\Form;
-use BlackParadise\LaravelAdmin\Core\FormBuilder\FormBuilder;
-use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\EmailInput;
-use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\PasswordInput;
-use BlackParadise\LaravelAdmin\Core\PageBuilder\PageBuilder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\Form;
+use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\FormBuilder;
+use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\Inputs\EmailInput;
+use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\Inputs\PasswordInput;
+use BlackParadise\LaravelAdmin\Core\Builders\PageBuilder\PageBuilder;
+use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Exception;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+use RuntimeException;
 
 class AuthController
 {
-    public function getLoginPage()
+    /**
+     * @return View
+     */
+    public function getLoginPage(): View
     {
         $form = new Form([
             'action'    =>  route('bpadmin.loginPost'),
@@ -31,7 +37,13 @@ class AuthController
         ]))->render();
     }
 
-    public function login(Request $request)
+    /**
+     * @param Request $request
+     * @return RedirectResponse
+     * @throws ValidationException
+     * @throws Exception
+     */
+    public function login(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'email' => 'required|string|email|exists:users,email',
@@ -40,21 +52,26 @@ class AuthController
         $user = config('bpadmin.userEntity')::where('email', $data['email'])->first();
         if (! $user
             || ! Hash::check($data['password'], $user->password)
-            || ! $user->hasRole('superadmin')
+
         ) {
             throw ValidationException::withMessages([
                 'email' => 'Wrong credentials',
             ]);
         }
-        if (Auth::guard('web')->attempt($request->only('email', 'password'))) {
-            return redirect()->route('bpadmin.pages.index');
+        if (!Auth::guard('web')->attempt($request->only('email', 'password'))) {
+            throw new RuntimeException('Something wrong');
         }
-        throw Exception::error(['something wrong']);
+
+        return redirect()->route('bpadmin.pages.index');
     }
 
-    public function logout()
+    /**
+     * @return RedirectResponse
+     */
+    public function logout(): RedirectResponse
     {
         Auth::guard('web')->logout();
+
         return redirect()->route('bpadmin.pages.index');
     }
 }

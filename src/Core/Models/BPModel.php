@@ -2,14 +2,13 @@
 
 namespace BlackParadise\LaravelAdmin\Core\Models;
 
-use BlackParadise\LaravelAdmin\Core\AbstractRepo;
-use BlackParadise\LaravelAdmin\Core\DashboardPresenter;
-use BlackParadise\LaravelAdmin\Core\StorageManager;
-use BlackParadise\LaravelAdmin\Core\FormBuilder\Form;
+use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\Form;
+use BlackParadise\LaravelAdmin\Core\Presenters\DashboardPresenter;
+use BlackParadise\LaravelAdmin\Core\Repo\AbstractRepo;
+use BlackParadise\LaravelAdmin\Core\Services\StorageManager;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\View\View;
 
 class BPModel
 {
@@ -56,53 +55,19 @@ class BPModel
     public function getFileFields()
     {
         return array_keys(array_filter($this->fieldTypes, function ($field) {
-            return $field['type'] == 'file';
+            return $field['type'] === 'file';
         }));
     }
 
-    public function getTablePage(Request $request): View
-    {
-        $data = $request->all(['perPage','page','sortBy','sortDesc', 'q']);
-        $headers = $this->tableHeaderFields;
-        $searchable = !empty($this->searchFields);
-
-        $items = $this->indexQuery($data, $headers);
-        $items = $items->toArray();
-        $entity = new $this->model;
-        $items['data'] = array_map(function ($item) use ($headers, $entity) {
-            if ($entity->translatable) {
-                foreach(array_intersect($entity->translatable, $headers) as $transField)
-                {
-                    $item[$transField] = $item[$transField]?$item[$transField][config('bpadmin.languages')[0]]:null;
-                }
-            }
-            return $item;
-        },$items['data']);
-        return (new DashboardPresenter())->getTablePage($headers, $items,$this->name,$searchable);
-    }
-
-    public function getCreatePage(): View
-    {
-        return (new DashboardPresenter())->getCreatePage($this);
-    }
-
-    public function getShowPage(int $id): View
-    {
-        $item = $this->findQuery($id, $this->showPageFields);
-
-        return (new DashboardPresenter())->getShowPage($item, $this->showPageFields, $this->name);
-    }
-
-    public function getEditPage(int $id): View
+    public function getEditFields()
     {
         $fields = array_keys($this->getFieldsWithoutHidden());
         $fields = array_filter($fields,function ($field) {
             return substr($field, -6) !== 'method' && $field;
         });
         $fields[] = 'id';
-        $item = $this->findQuery($id, $fields);
 
-        return (new DashboardPresenter())->getEditPage($this, $item);
+        return $fields;
     }
 
     public function storeEntity(array $data)
@@ -147,33 +112,9 @@ class BPModel
         }
     }
 
-    public function getStoreRules()
-    {
-        if ($this->rules['store'] !== null) {
-            return $this->rules['store'];
-        }
-        $form = new Form([],new $this->model,$this);
-        return $form->getRules();
-    }
-
-    public function getUpdateRules(int $id)
-    {
-        if ($this->rules['update'] !== null) {
-            return $this->rules['update'];
-        }
-        $fields = array_keys(array_filter($this->getFieldsWithoutHidden(), function($item,$key) {
-            return substr($key, -6) !== 'method' && $item;
-        },1));
-        $fields[] = 'id';
-        $item = $this->findQuery($id, $fields);
-        $form = new Form([],$item,$this);
-        $rules = $form->getRules($item);
-        return $rules;
-    }
-
     public function delete(int $id)
     {
-        $model = (new AbstractRepo($this->model,$this->searchFields))->find($id);
+        $model = $this->findQuery($id);
         if ($model) {
             $files = $this->getFileFields();
             foreach($files as $key => $value) {
@@ -190,7 +131,7 @@ class BPModel
         return (new AbstractRepo($this->model,$this->searchFields))->search($data,$headers);
     }
 
-    public function findQuery(int $id, array $fields)
+    public function findQuery(int $id, array $fields = ['*'])
     {
         return (new AbstractRepo($this->model,$this->searchFields))->find($id, $fields);
     }

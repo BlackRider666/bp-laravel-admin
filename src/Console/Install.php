@@ -2,7 +2,7 @@
 
 namespace BlackParadise\LaravelAdmin\Console;
 
-use BlackParadise\LaravelAdmin\Core\TypeFromTable;
+use BlackParadise\LaravelAdmin\Core\Services\TypeFromTable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
