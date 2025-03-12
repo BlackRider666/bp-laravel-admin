@@ -10,7 +10,7 @@ class AdminAuth extends Middleware
     protected function redirectTo($request)
     {
         if (! $request->expectsJson()) {
-            return route('bpadmin.login');
+            return route('bpadmin.auth.login');
         }
     }
 }

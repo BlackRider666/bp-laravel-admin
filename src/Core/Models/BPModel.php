@@ -6,6 +6,7 @@ use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\Form;
 use BlackParadise\LaravelAdmin\Core\Presenters\DashboardPresenter;
 use BlackParadise\LaravelAdmin\Core\Repo\AbstractRepo;
 use BlackParadise\LaravelAdmin\Core\Services\StorageManager;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -88,14 +89,13 @@ class BPModel
         }
     }
 
-    public function updateEntity(int $id, array $data)
+    /**
+     * @param Model $model
+     * @param array $data
+     * @return void
+     */
+    public function updateEntity(Model $model, array $data): void
     {
-        $fields = array_keys($this->getFieldsWithoutHidden());
-        $fields[] = 'id';
-        $fieldsToFind = array_filter($fields, function($item) {
-            return substr($item, -6) !== 'method' && $item;
-        },1);
-        $model = $this->findQuery($id, $fieldsToFind);
         $model->update($data);
         $methods = array_filter($data, function($item,$key) {
             return substr($key, -6) === 'method' && $item;
@@ -112,9 +112,12 @@ class BPModel
         }
     }
 
-    public function delete(int $id)
+    /**
+     * @param Model|null $model
+     * @return void
+     */
+    public function delete(Model $model = null): void
     {
-        $model = $this->findQuery($id);
         if ($model) {
             $files = $this->getFileFields();
             foreach($files as $key => $value) {

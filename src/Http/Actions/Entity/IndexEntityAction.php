@@ -4,14 +4,19 @@ namespace BlackParadise\LaravelAdmin\Http\Actions\Entity;
 
 use BlackParadise\LaravelAdmin\Core\Models\BPModel;
 use BlackParadise\LaravelAdmin\Core\Presenters\DashboardPresenter;
-use BlackParadise\LaravelAdmin\Http\Actions\Entity\Interface\IndexEntityInterface;
+use BlackParadise\LaravelAdmin\Http\Actions\Interfaces\Entity\IndexEntityInterface;
+use BlackParadise\LaravelAdmin\Http\Actions\Traits\HandlesEntityAuthorization;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\View\View;
+use Inertia\Response;
 
 class IndexEntityAction implements IndexEntityInterface
 {
+    use HandlesEntityAuthorization;
+
     private BPModel $BPModel;
     private DashboardPresenter $dashboardPresenter;
 
@@ -23,10 +28,13 @@ class IndexEntityAction implements IndexEntityInterface
 
     /**
      * @param Request $request
-     * @return View
+     * @return Response|View
+     * @throws AuthorizationException
      */
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request): Response|View
     {
+        $this->authorizeAction('viewAny');
+
         $data = $request->all();
         $headers = $this->BPModel->tableHeaderFields;
         $searchable = !empty($this->BPModel->searchFields);

@@ -25,18 +25,34 @@ if (!function_exists('bpadmin_navbar_format_items')) {
                 }
             }
         }
-        array_walk($items,  static function(&$item, $key) use ($patterns){
+        array_walk($items,  static function(&$item, $key) use ($patterns) {
+            $entityClass = config("bpadmin.entities.$key");
+
+            // Якщо є policy, але юзер не має доступу – прибираємо пункт
+            if ($entityClass && \Illuminate\Support\Facades\Gate::getPolicyFor($entityClass) && !\Illuminate\Support\Facades\Gate::allows('viewAny', $entityClass)) {
+                $item = null;
+                return;
+            }
+
             $item['title'] = ucwords(str_replace('_',' ',$key));
             $item['href'] = route('bpadmin.'.$key.'.index');
             $item['active'] = request()->routeIs($patterns[$key]);
             if (array_key_exists('items',$item)) {
-                array_walk($item['items'],  static function(&$subItem, $key) use ($patterns){
-                    $subItem['title'] = ucwords(str_replace('_',' ',$key));
-                    $subItem['href'] = route('bpadmin.'.$key.'.index');
-                    $subItem['active'] = request()->routeIs($patterns[$key]);
+                array_walk($item['items'],  static function(&$subItem, $subKey) use ($patterns) {
+                    $entityClassSub = config("bpadmin.entities.$subKey");
+                    if ($entityClassSub && \Illuminate\Support\Facades\Gate::getPolicyFor($entityClassSub) && !\Illuminate\Support\Facades\Gate::allows('viewAny', $entityClassSub)) {
+                        $subItem = null;
+                        return;
+                    }
+                    $subItem['title'] = ucwords(str_replace('_',' ',$subKey));
+                    $subItem['href'] = route('bpadmin.'.$subKey.'.index');
+                    $subItem['active'] = request()->routeIs($patterns[$subKey]);
                 });
+                $item['items'] = array_filter($item['items']);
             }
         });
+
+        $items = array_filter($items);
         return [ 'pages' => [
                 'title' => 'Home',
                 'href'  =>  route('bpadmin.pages.index'),

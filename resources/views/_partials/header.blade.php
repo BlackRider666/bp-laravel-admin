@@ -1,1 +1,0 @@
-<app-header username="{{ Auth::check()?Auth::user()->name:''}} " email="{{ Auth::check()?Auth::user()->email:''}}" logoutRoute="{{route('bpadmin.logout')}}" csrfToken="{{ csrf_token() }}"></app-header>

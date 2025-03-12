@@ -2,11 +2,10 @@
 
 return [
     'title' => 'BPAdmin',
-    'userEntity'    => \App\User::class,
     'languages'     => ['en'],
 
     'entities' => [
-        'users' => \App\User::class,
+        'users' => \App\Models\User::class,
     ],
     'menu' => [
         'users' => [
@@ -17,5 +16,21 @@ return [
                 ],
             ],
         ],
+    ],
+    'custom_actions' => [
+    ],
+    'auth' => [
+        'userEntity'    => \App\Models\User::class,
+        'username'      => 'email',
+        'custom_actions' => [
+//            'loginPage' => \App\BPAdmin\Action\Auth\YourCustomAction::class,
+//            'login' => \App\BPAdmin\Action\Auth\YourCustomAction::class,
+//            'logout' => \App\BPAdmin\Action\Auth\YourCustomAction::class,
+        ],
+        'auth_rules'     => static function (array $credentials, \Illuminate\Contracts\Auth\Authenticatable $user) : bool {
+            //your rules here
+            //$user->hasRole('admin');
+            return true;
+        }
     ],
 ];

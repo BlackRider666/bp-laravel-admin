@@ -8,38 +8,35 @@ To create a custom action, follow these steps:
 
 1. **Define the Interface**
     - Each action (Index, Store, Update, Delete) has its own interface that defines the required method signature.
-    - Example:
-      ```php
-      namespace BlackParadise\LaravelAdmin\Http\Actions\Entity\Interface;
+      - Example:
+        ```php
+        namespace BlackParadise\LaravelAdmin\Http\Actions\Entity\Interface;
  
-      use Illuminate\Http\RedirectResponse;
-      use BlackParadise\LaravelAdmin\Http\Requests\StoreAbstractEntityRequest;
+        use BlackParadise\LaravelAdmin\Http\Requests\Entity\StoreAbstractEntityRequest;use Illuminate\Http\RedirectResponse;
  
-      interface StoreEntityInterface
-      {
-          public function __invoke(StoreAbstractEntityRequest $request): RedirectResponse;
-      }
-      ```
+        interface StoreEntityInterface
+        {
+            public function __invoke(StoreAbstractEntityRequest $request): RedirectResponse;
+        }
+        ```
 
 2. **Implement the Action Class**
     - Your action class must implement the corresponding interface.
-    - Example:
-      ```php
-      namespace BlackParadise\LaravelAdmin\Http\Actions\Entity;
+   - Example:
+     ```php
+     namespace BlackParadise\LaravelAdmin\Http\Actions\Entity;
  
-      use BlackParadise\LaravelAdmin\Http\Actions\Entity\Interface\StoreEntityInterface;
-      use BlackParadise\LaravelAdmin\Http\Requests\StoreAbstractEntityRequest;
-      use Illuminate\Http\RedirectResponse;
+     use BlackParadise\LaravelAdmin\Http\Actions\Interface\StoreEntityInterface;use BlackParadise\LaravelAdmin\Http\Requests\StoreAbstractEntityRequest;use Illuminate\Http\RedirectResponse;
  
-      class StoreEntityAction implements StoreEntityInterface
-      {
-          public function __invoke(StoreAbstractEntityRequest $request): RedirectResponse
-          {
-              // Custom logic for storing entity
-              return redirect()->route('bpadmin.entity.index'); // or your custom route
-          }
-      }
-      ```
+     class StoreEntityAction implements StoreEntityInterface
+     {
+         public function __invoke(StoreAbstractEntityRequest $request): RedirectResponse
+         {
+             // Custom logic for storing entity
+             return redirect()->route('bpadmin.entity.index'); // or your custom route
+         }
+     }
+     ```
 
 3. **Register the Action in Configuration**
    - Add the custom action class to the `bpadmin.php` config file under `custom_actions`:

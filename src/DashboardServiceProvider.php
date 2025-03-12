@@ -3,27 +3,32 @@
 
 namespace BlackParadise\LaravelAdmin;
 
+use BlackParadise\LaravelAdmin\Console\GenerateTranslation;
 use BlackParadise\LaravelAdmin\Console\Install;
+use BlackParadise\LaravelAdmin\Http\Actions\Auth\{LoginPageAction,
+    LoginAction,
+    LogoutAction};
+use BlackParadise\LaravelAdmin\Http\Actions\Interfaces\Auth\{LoginPageActionInterface,
+    LoginActionInterface,
+    LogoutActionInterface};
 use BlackParadise\LaravelAdmin\Http\Actions\Entity\{CreateEntityAction,
     DeleteEntityAction,
     EditEntityAction,
     IndexEntityAction,
-    Interface\CreateEntityInterface,
-    Interface\DeleteEntityInterface,
-    Interface\EditEntityInterface,
-    Interface\IndexEntityInterface,
-    Interface\ShowEntityInterface,
-    Interface\StoreEntityInterface,
-    Interface\UpdateEntityInterface,
     ShowEntityAction,
     StoreEntityAction,
     UpdateEntityAction};
+use BlackParadise\LaravelAdmin\Http\Actions\Interfaces\Entity\{CreateEntityInterface,
+    DeleteEntityInterface,
+    EditEntityInterface,
+    IndexEntityInterface,
+    ShowEntityInterface,
+    StoreEntityInterface,
+    UpdateEntityInterface};
 use BlackParadise\LaravelAdmin\Http\Middleware\AdminAuth;
 use BlackParadise\LaravelAdmin\Http\Middleware\EntityExistMiddleware;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Routing\Router;
-use BlackParadise\LaravelAdmin\Console\GenerateTranslation;
+use Illuminate\Support\ServiceProvider;
 
 class DashboardServiceProvider extends ServiceProvider
 {
@@ -33,8 +38,6 @@ class DashboardServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', $this->configPath);
-
         $this->registerPublishes();
 
         $this->registerCommands();
@@ -80,18 +83,9 @@ class DashboardServiceProvider extends ServiceProvider
     protected function registerPublishes()
     {
         $this->publishes([
-            __DIR__ . '/../resources/views' => resource_path('views/vendor/bpadmin'),
-            __DIR__ . '/../public' => public_path('/'),
             __DIR__ . '/../config/dashboard.php' => config_path('bpadmin.php'),
             __DIR__ . '/../resources/lang' => resource_path('lang/vendor/bpadmin'),
-            __DIR__ . '/../resources/js' => resource_path('js/vendor/bpadmin'),
-        ], 'bpadmin::all');
-
-        $this->publishes([
-            __DIR__ . '/../public' => public_path('/'),
-            __DIR__ . '/../config/dashboard.php' => config_path('bpadmin.php'),
-            __DIR__ . '/../resources/lang' => resource_path('lang/vendor/bpadmin'),
-        ], 'bpadmin::min');
+        ], 'bpadmin::core-min');
     }
 
     /**
@@ -131,6 +125,18 @@ class DashboardServiceProvider extends ServiceProvider
         $this->app->bind(DeleteEntityInterface::class, function ($app) {
             return $this->resolveAction($app, 'destroy', DeleteEntityAction::class);
         });
+
+        $this->app->bind(LoginPageActionInterface::class, function ($app) {
+            return $this->resolveAuthAction($app, 'loginPage', LoginPageAction::class);
+        });
+
+        $this->app->bind(LoginActionInterface::class, function ($app) {
+            return $this->resolveAuthAction($app, 'login', LoginAction::class);
+        });
+
+        $this->app->bind(LogoutActionInterface::class, function ($app) {
+            return $this->resolveAuthAction($app, 'logout', LogoutAction::class);
+        });
     }
 
     private function resolveAction($app, string $action, string $defaultClass)
@@ -139,6 +145,17 @@ class DashboardServiceProvider extends ServiceProvider
         $entityName = $request->query('entity_name');
 
         $customAction = config("bpadmin.custom_actions.$entityName.$action");
+
+        if ($customAction && class_exists($customAction)) {
+            return $app->make($customAction);
+        }
+
+        return $app->make($defaultClass);
+    }
+
+    private function resolveAuthAction($app, string $action, string $defaultClass)
+    {
+        $customAction = config("bpadmin.auth.custom_actions.$action");
 
         if ($customAction && class_exists($customAction)) {
             return $app->make($customAction);

@@ -3,11 +3,15 @@
 namespace BlackParadise\LaravelAdmin\Http\Actions\Entity;
 
 use BlackParadise\LaravelAdmin\Core\Models\BPModel;
-use BlackParadise\LaravelAdmin\Http\Actions\Entity\Interface\DeleteEntityInterface;
+use BlackParadise\LaravelAdmin\Http\Actions\Interface\Entity\DeleteEntityInterface;
+use BlackParadise\LaravelAdmin\Http\Actions\Traits\HandlesEntityAuthorization;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 
 class DeleteEntityAction implements DeleteEntityInterface
 {
+    use HandlesEntityAuthorization;
+
     private BPModel $BPModel;
 
     public function __construct(BPModel $BPModel)
@@ -18,10 +22,15 @@ class DeleteEntityAction implements DeleteEntityInterface
     /**
      * @param int $id
      * @return RedirectResponse
+     * @throws AuthorizationException
      */
     public function __invoke(int $id): RedirectResponse
     {
-        $this->BPModel->delete($id);
+        $model = $this->BPModel->findQuery($id);
+
+        $this->authorizeAction('delete', $model);
+
+        $this->BPModel->delete($model);
 
         return redirectToIndexModelPage($this->BPModel->name);
     }

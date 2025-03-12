@@ -1,1 +1,0 @@
-<left-bar title="{{config('bpadmin.title')}}" {{config('bpadmin.logo')?'logo="'.config('bpadmin.logo').'"':''}} :items="{{json_encode(bpadmin_navbar_format_items(config('bpadmin.menu'))) }}"></left-bar>
