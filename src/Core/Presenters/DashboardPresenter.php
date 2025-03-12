@@ -55,7 +55,7 @@ class DashboardPresenter
     public function getCreatePage(BPModel $BPModel): Response|View
     {
         $form = FormFactory::make([],new $BPModel->model,$BPModel);
-        return PageFactory::make('crud',__('bpadmin::common.headers.create_entity',['entity' => __('bpadmin::'.$BPModel->name.'.name')]),[
+        return PageFactory::make('crud',__('bpadmin::common.headers.create_entity',['entity' => __('bpadmin::'.$BPModel->name.'.__name')]),[
             $form->renderCreateForm(),
         ])->render();
     }
@@ -74,7 +74,7 @@ class DashboardPresenter
         }, $fields);
 
         return PageFactory::make('bpadmin::layout.crud',
-            __('bpadmin::common.headers.show_entity',['entity' => __('bpadmin::'.$name.'.name'), 'id' => $item->getKey()]),
+            __('bpadmin::common.headers.show_entity',['entity' => __('bpadmin::'.$name.'.__name'), 'id' => $item->getKey()]),
             [
                 TableFactory::make(['key', 'value'],$data,$name, false)
             ]
@@ -91,7 +91,7 @@ class DashboardPresenter
     {
         $form = FormFactory::make([],new $BPModel->model,$BPModel);
         return PageFactory::make('crud',
-            __('bpadmin::common.headers.edit_entity',['entity' => __('bpadmin::'.$BPModel->name.'.name'), 'id' => $model->getKey()]),[
+            __('bpadmin::common.headers.edit_entity',['entity' => __('bpadmin::'.$BPModel->name.'.__name'), 'id' => $model->getKey()]),[
             $form->renderEditForm(),
         ])->render();
     }

@@ -19,7 +19,7 @@ class GenerateTranslation extends Command
             $this->info('Generation for: '.ucfirst($key).' started!');
             $fillables = (new TypeFromTable())->getTypeList(new $options['entity']);
             $translation = '<?php'.PHP_EOL.' return ['.PHP_EOL;
-            $translation.= "\t"."'name' => '".ucfirst($key)."',".PHP_EOL;
+            $translation.= "\t"."'__name' => '".ucfirst($key)."',".PHP_EOL;
             foreach ($fillables as $k => $value) {
                 $field = substr($k, -6) === 'method' ? substr($k, 0, -7) : $k;
                 $translation.= "\t"."'".$k."' => '".ucfirst($field)."',".PHP_EOL;

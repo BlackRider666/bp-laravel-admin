@@ -1,10 +1,10 @@
 <?php
 
-use BlackParadise\LaravelAdmin\Http\Actions\Interface\Auth\{LoginActionInterface,
+use BlackParadise\LaravelAdmin\Http\Actions\Interfaces\Auth\{LoginActionInterface,
     LoginPageActionInterface,
     LogoutActionInterface
 };
-use BlackParadise\LaravelAdmin\Http\Actions\Interface\Entity\{UpdateEntityInterface,
+use BlackParadise\LaravelAdmin\Http\Actions\Interfaces\Entity\{UpdateEntityInterface,
     CreateEntityInterface,
     DeleteEntityInterface,
     EditEntityInterface,

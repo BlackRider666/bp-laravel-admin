@@ -33,10 +33,10 @@ The package uses a configuration file located at `config/bpadmin.php`. This file
 ```php
 return [
     'title' => 'BPAdmin',
-    'userEntity' => \App\User::class,
+    'userEntity' => \App\Models\User::class,
     'languages' => ['en'],
     'entities' => [
-        'users' => \App\User::class,
+        'users' => \App\Models\User::class,
     ],
     'menu' => [
         'users' => [

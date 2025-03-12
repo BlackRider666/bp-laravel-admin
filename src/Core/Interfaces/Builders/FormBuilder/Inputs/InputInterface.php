@@ -7,4 +7,6 @@ interface InputInterface
     public function render();
 
     public function getRules();
+
+    public function getType();
 }
