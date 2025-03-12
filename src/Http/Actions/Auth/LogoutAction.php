@@ -3,9 +3,8 @@
 namespace BlackParadise\LaravelAdmin\Http\Actions\Auth;
 
 use BlackParadise\LaravelAdmin\Core\Services\AuthService;
-use BlackParadise\LaravelAdmin\Http\Actions\Interface\Auth\LogoutActionInterface;
+use BlackParadise\LaravelAdmin\Http\Actions\Interfaces\Auth\LogoutActionInterface;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Auth;
 
 class LogoutAction implements LogoutActionInterface
 {

@@ -2,7 +2,7 @@
 
 namespace BlackParadise\LaravelAdmin\Http\Requests\Entity;
 
-use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\Form;
+use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\FormFactory;
 
 class UpdateAbstractEntityRequest extends BaseAbstractEntityRequest
 {
@@ -19,6 +19,6 @@ class UpdateAbstractEntityRequest extends BaseAbstractEntityRequest
 
         $item = $this->BPModel->findQuery($this->id, $fields);
 
-        return (new Form([], $item, $this->BPModel))->getRules($item);
+        return FormFactory::make([], $item, $this->BPModel)->getRules($item);
     }
 }

@@ -9,7 +9,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|string|email|exists:users,email',
+            config('bpadmin.auth.username') => 'required|string|email|exists:users,'.config('bpadmin.auth.username'),
             'password' => 'required|string|max:255',
         ];
     }

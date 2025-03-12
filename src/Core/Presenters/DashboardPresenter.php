@@ -15,6 +15,14 @@ use BlackParadise\LaravelAdmin\Core\Builders\PageBuilder\Components\LinkFactory;
 
 class DashboardPresenter
 {
+    public function getIndexPage()
+    {
+        return PageFactory::make(
+            'crud',
+            __('bpadmin::common.welcome.title',['title' => config('bpadmin.title')]),
+            __('bpadmin::common.welcome.desc',['title' => config('bpadmin.title')]),
+        )->render();
+    }
     /**
      * @param array $headers
      * @param array $items
@@ -73,10 +81,10 @@ class DashboardPresenter
             return ['key' => $field, 'value' => $item->$field];
         }, $fields);
 
-        return PageFactory::make('bpadmin::layout.crud',
+        return PageFactory::make('crud',
             __('bpadmin::common.headers.show_entity',['entity' => __('bpadmin::'.$name.'.__name'), 'id' => $item->getKey()]),
             [
-                TableFactory::make(['key', 'value'],$data,$name, false)
+                TableFactory::make(['key', 'value'],$data,$name, false)->render()
             ]
         )->render();
     }
@@ -89,7 +97,7 @@ class DashboardPresenter
      */
     public function getEditPage(BPModel $BPModel,Model $model): Response|View
     {
-        $form = FormFactory::make([],new $BPModel->model,$BPModel);
+        $form = FormFactory::make([],$model,$BPModel);
         return PageFactory::make('crud',
             __('bpadmin::common.headers.edit_entity',['entity' => __('bpadmin::'.$BPModel->name.'.__name'), 'id' => $model->getKey()]),[
             $form->renderEditForm(),

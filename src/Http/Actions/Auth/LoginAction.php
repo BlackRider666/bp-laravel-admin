@@ -3,7 +3,7 @@
 namespace BlackParadise\LaravelAdmin\Http\Actions\Auth;
 
 use BlackParadise\LaravelAdmin\Core\Services\AuthService;
-use BlackParadise\LaravelAdmin\Http\Actions\Interface\Auth\LoginActionInterface;
+use BlackParadise\LaravelAdmin\Http\Actions\Interfaces\Auth\LoginActionInterface;
 use BlackParadise\LaravelAdmin\Http\Requests\Auth\LoginRequest;
 use Exception;
 use Illuminate\Http\RedirectResponse;

@@ -1,5 +1,6 @@
 <?php
 
+use BlackParadise\LaravelAdmin\Http\Actions\Static\IndexAction;
 use BlackParadise\LaravelAdmin\Http\Actions\Interfaces\Auth\{LoginActionInterface,
     LoginPageActionInterface,
     LogoutActionInterface
@@ -31,9 +32,7 @@ Route::group([
             });
         }
     });
-    Route::get('/', function () {
-        return view('bpadmin::pages.index');
-    })->name('pages.index')->middleware('admin-auth');
+    Route::get('/', IndexAction::class)->name('pages.index')->middleware('admin-auth');
     Route::group([
         'as' => 'auth.',
         'prefix' => 'auth',
