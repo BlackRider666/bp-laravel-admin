@@ -20,7 +20,9 @@ class DashboardPresenter
         return PageFactory::make(
             'crud',
             __('bpadmin::common.welcome.title',['title' => config('bpadmin.title')]),
-            __('bpadmin::common.welcome.desc',['title' => config('bpadmin.title')]),
+            [
+                '<div v-html="`'.__('bpadmin::common.welcome.desc',['title' => config('bpadmin.title')]).'`"></div>'
+            ],
         )->render();
     }
     /**
@@ -41,12 +43,14 @@ class DashboardPresenter
 
         $page = PageFactory::make(
             'crud',
-            __('bpadmin::common.headers.table_entity',['entity' => __('bpadmin::'.$name.'.name')]),
+            __('bpadmin::common.headers.table_entity',['entity' => __('bpadmin::'.$name.'.__name')]),
             [
                 TableFactory::make($headers, $items, $name, $searchable, $routes)->render(),
             ],
             array_filter([
-                isset($routes['create']) ? LinkFactory::make(__('bpadmin::common.forms.create'), 'mdi-plus', [
+                isset($routes['create']) ? LinkFactory::make([
+                    'label' => __('bpadmin::common.forms.create'),
+                    'icon' => 'mdi-plus',
                     'href' => route('bpadmin.' . $name . '.create'),
                 ])->render() : null,
             ])

@@ -3,6 +3,7 @@ return [
     'forms' => [
         'create' => 'Create',
         'update' => 'Update',
+        'back'   => 'Back'
     ],
     'headers' => [
         'table_entity' => 'Table :entity',
