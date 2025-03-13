@@ -49,8 +49,8 @@ class DashboardPresenter
             ],
             array_filter([
                 isset($routes['create']) ? LinkFactory::make([
-                    'label' => __('bpadmin::common.forms.create'),
-                    'icon' => 'mdi-plus',
+                    'text' => __('bpadmin::common.forms.create'),
+                    'prepend-icon' => 'mdi-plus',
                     'href' => route('bpadmin.' . $name . '.create'),
                 ])->render() : null,
             ])
