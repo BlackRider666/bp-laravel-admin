@@ -12,6 +12,7 @@ use BlackParadise\LaravelAdmin\Core\Builders\PageBuilder\PageFactory;
 use BlackParadise\LaravelAdmin\Core\Builders\FormBuilder\FormFactory;
 use BlackParadise\LaravelAdmin\Core\Builders\TableBuilder\TableFactory;
 use BlackParadise\LaravelAdmin\Core\Builders\PageBuilder\Components\LinkFactory;
+use BlackParadise\LaravelAdmin\Core\Builders\TableBuilder\SimpleTableFactory;
 
 class DashboardPresenter
 {
@@ -88,7 +89,7 @@ class DashboardPresenter
         return PageFactory::make('crud',
             __('bpadmin::common.headers.show_entity',['entity' => __('bpadmin::'.$name.'.__name'), 'id' => $item->getKey()]),
             [
-                TableFactory::make(['key', 'value'],$data,$name, false)->render()
+                SimpleTableFactory::make($data)->render()
             ]
         )->render();
     }
