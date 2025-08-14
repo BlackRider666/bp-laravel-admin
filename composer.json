@@ -1,7 +1,7 @@
 {
   "name": "black-paradise/laravel-admin",
   "description": "Generate Admin Panel for Laravel",
-  "type": "project",
+  "type": "library",
   "license": "MIT",
   "authors": [
     {
@@ -11,7 +11,7 @@
   ],
   "minimum-stability": "stable",
   "require": {
-      "laravel/framework": "^11.0",
+      "laravel/framework": "^11.0|^12.0",
       "intervention/image": "^2.6",
       "doctrine/dbal": "^4.0"
   },
@@ -22,5 +22,12 @@
     "files": [
       "src/helpers.php"
     ]
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "BlackParadise\\LaravelAdmin\\DashboardServiceProvider"
+      ]
+    }
   }
 }

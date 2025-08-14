@@ -12,6 +12,7 @@ use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\HiddenInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\InputInterface;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\IntegerInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\PasswordInput;
+use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\SelectInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\StringInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\SubmitInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TextInput;
@@ -19,12 +20,8 @@ use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TranslatableInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\TranslatableEditorInput;
 use BlackParadise\LaravelAdmin\Core\FormBuilder\Inputs\EditorInput;
 use BlackParadise\LaravelAdmin\Core\Models\BPModel;
-use BlackParadise\LaravelAdmin\Core\TypeFromTable;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\ViewErrorBag;
-use Illuminate\Http\Request;
 
 class Form
 {
@@ -38,7 +35,8 @@ class Form
         'hashed'  =>  PasswordInput::class,
         'submit'    =>  SubmitInput::class,
         'BelongsTo' =>  BelongsToInput::class,
-        'BelongsToMany' =>  BelongsToInput::class,
+        'BelongsToMany' => BelongsToInput::class,
+        'select'        => SelectInput::class,
         //date
         //phone
         'file'          =>  FileInput::class,
@@ -86,7 +84,7 @@ class Form
                         :
                         $modelRel->pluck('name', 'id');
                 } else {
-                    $items = null;
+                    $items = $value['items'] ?? null;
                 }
 
                 $attrUpdated = [
