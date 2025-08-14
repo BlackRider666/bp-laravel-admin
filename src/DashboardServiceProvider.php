@@ -28,11 +28,10 @@ class DashboardServiceProvider extends ServiceProvider
 
         $this->loadTranslations();
         //web routes
-        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
-        $router = $this->app->make(Router::class);
-        $router->aliasMiddleware('exists', EntityExistMiddleware::class);
-        $router->aliasMiddleware('admin-auth', AdminAuth::class);
+        $this->app['router']->aliasMiddleware('exists', EntityExistMiddleware::class);
+        $this->app['router']->aliasMiddleware('admin-auth', AdminAuth::class);
+        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
     }
 
     /**

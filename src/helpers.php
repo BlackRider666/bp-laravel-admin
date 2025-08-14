@@ -35,10 +35,10 @@ if (!function_exists('bpadmin_navbar_format_items')) {
                 });
             }
         });
-        return [ 'pages' => [
+        return [ 'static' => [
                 'title' => 'Home',
-                'href'  =>  route('bpadmin.pages.index'),
-                'active'    => request()->routeIs('bpadmin.pages.index'),
+                'href'  =>  route('bpadmin.static.index'),
+                'active'    => request()->routeIs('bpadmin.static.index'),
                 'icon'      =>  'mdi-chart-areaspline'
             ]] + $items;
     }

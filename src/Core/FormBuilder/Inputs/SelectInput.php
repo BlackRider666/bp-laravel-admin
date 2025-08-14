@@ -15,11 +15,16 @@ class SelectInput implements InputInterface
     ];
     public function __construct(array $attributes, string $entity, array $errors)
     {
-        $this->items = $attributes['items']->toArray();
+        $this->items = $attributes['items'];
         unset($attributes['items'], $attributes['type']);
         $this->attributes['multiple'] = array_key_exists('multiple', $attributes) && $attributes['multiple']?'true':'false';
         $this->attributes['label'] = trans('bpadmin::'.$entity.'.'.$attributes['name']);
-        $this->attributes['value'] = old($attributes['name']);
+        $this->attributes['value'] = isset($attributes['value'])
+            ? (is_object($attributes['value'])
+                ? $attributes['value']->value()
+                : $attributes['value'])
+            : old($attributes['name'] ?? null);
+        unset($attributes['value']);
         $this->attributes = array_merge($this->attributes,$attributes);
         $this->errors = $errors;
     }

@@ -19,7 +19,7 @@ Route::group(['middleware' => ['web','admin-auth']], function () {
 });
 Route::get('/admin/', function () {
     return view('bpadmin::pages.index');
-})->name('bpadmin.pages.index')->middleware(['web','admin-auth']);
+})->name('bpadmin.static.index')->middleware(['web','admin-auth']);
 Route::get('/admin/login/', [AuthController::class,'getLoginPage'])
     ->name('bpadmin.login')
     ->middleware('web');
