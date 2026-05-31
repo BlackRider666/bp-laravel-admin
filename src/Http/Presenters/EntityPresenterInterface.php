@@ -28,9 +28,9 @@ interface EntityPresenterInterface
     /**
      * Render the outcome of a bulk delete operation.
      *
-     * @param int                $deletedCount Number of records successfully removed.
-     * @param list<string>       $failedIds    Ids that authorization rejected.
-     * @param list<string>       $notFoundIds  Ids that no longer existed at delete time.
+     * @param int $deletedCount Number of records successfully removed.
+     * @param list<string> $failedIds Ids that authorization rejected.
+     * @param list<string> $notFoundIds Ids that no longer existed at delete time.
      */
     public function bulkDestroyResult(
         int $deletedCount,

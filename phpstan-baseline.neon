@@ -37,6 +37,12 @@ parameters:
 			path: src/DashboardServiceProvider.php
 
 		-
+			message: '#^Dynamic call to static method Illuminate\\Foundation\\Application\:\:routesAreCached\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/DashboardServiceProvider.php
+
+		-
 			message: '#^Method BlackParadise\\LaravelAdmin\\DashboardServiceProvider\:\:classFromPath\(\) should return class\-string\|null but returns string\.$#'
 			identifier: return.type
 			count: 1
@@ -45,12 +51,6 @@ parameters:
 		-
 			message: '#^Parameter \#2 \$fieldClass of method BlackParadise\\LaravelAdmin\\Core\\FieldTypeRegistry\:\:register\(\) expects class\-string\<BlackParadise\\CoreAdmin\\Domain\\Fields\\Base\\AbstractField\>, class\-string given\.$#'
 			identifier: argument.type
-			count: 1
-			path: src/DashboardServiceProvider.php
-
-		-
-			message: '#^Dynamic call to static method Illuminate\\Foundation\\Application\:\:routesAreCached\(\)\.$#'
-			identifier: staticMethod.dynamicCall
 			count: 1
 			path: src/DashboardServiceProvider.php
 
@@ -65,6 +65,12 @@ parameters:
 			identifier: staticMethod.dynamicCall
 			count: 1
 			path: src/Http/Controllers/LocaleController.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Http\\Request\:\:hasValidSignature\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/Http/Controllers/SafeFileDownloadController.php
 
 		-
 			message: '#^Method BlackParadise\\LaravelAdmin\\Http\\Presenters\\EntityPresenterInterface\:\:create\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
@@ -112,6 +118,12 @@ parameters:
 			message: '#^Method BlackParadise\\LaravelAdmin\\Http\\Presenters\\Json\\JsonEntityPresenter\:\:show\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
+			path: src/Http/Presenters/Json/JsonEntityPresenter.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 2
 			path: src/Http/Presenters/Json/JsonEntityPresenter.php
 
 		-
@@ -175,10 +187,46 @@ parameters:
 			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
 
 		-
-			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:(whereIn|whereNotIn)\(\)\.$#'
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:whereIn\(\)\.$#'
 			identifier: staticMethod.dynamicCall
-			count: 2
+			count: 1
 			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:whereNotIn\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
+
+		-
+			message: '#^Parameter \#2 \$direction of method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:orderBy\(\) expects ''asc''\|''desc''\|SortDirection, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:limit\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/Infrastructure/Persistence/EloquentRelationOptionsProvider.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:orderBy\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/Infrastructure/Persistence/EloquentRelationOptionsProvider.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:select\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/Infrastructure/Persistence/EloquentRelationOptionsProvider.php
+
+		-
+			message: '#^Variable property access on Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: property.dynamicName
+			count: 2
+			path: src/Infrastructure/Persistence/EloquentRelationOptionsProvider.php
 
 		-
 			message: '#^Call to an undefined method object\:\:where\(\)\.$#'
@@ -193,28 +241,16 @@ parameters:
 			path: src/Infrastructure/Persistence/MorphFilePersister.php
 
 		-
-			message: '#^Variable method call on Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: method.dynamicName
-			count: 5
-			path: src/Infrastructure/Persistence/RelationWriter.php
-
-		-
 			message: '#^Parameter \#2 \$ids of method BlackParadise\\LaravelAdmin\\Infrastructure\\Persistence\\RelationWriter\:\:buildBelongsToManySyncPayload\(\) expects array\<int, int\|string\>, list\<float\|int\|string\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Infrastructure/Persistence/RelationWriter.php
 
 		-
-			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:(limit|orderBy|select)\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 3
-			path: src/Infrastructure/Persistence/EloquentRelationOptionsProvider.php
-
-		-
-			message: '#^Variable property access on Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: property.dynamicName
-			count: 2
-			path: src/Infrastructure/Persistence/EloquentRelationOptionsProvider.php
+			message: '#^Variable method call on Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: method.dynamicName
+			count: 5
+			path: src/Infrastructure/Persistence/RelationWriter.php
 
 		-
 			message: '#^Dynamic call to static method Illuminate\\Routing\\RouteRegistrar\:\:prefix\(\)\.$#'
@@ -229,28 +265,16 @@ parameters:
 			path: src/Support/AvailableLocalesResolver.php
 
 		-
-			message: '#^Access to an undefined property object\:\:\$mime_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/translation_helpers.php
-
-		-
-			message: '#^Access to an undefined property object\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/translation_helpers.php
-
-		-
-			message: '#^Access to an undefined property object\:\:\$path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/translation_helpers.php
-
-		-
 			message: '#^Dynamic call to static method Illuminate\\Translation\\Translator\:\:has\(\)\.$#'
 			identifier: staticMethod.dynamicCall
 			count: 2
 			path: src/Support/translation_helpers.php
+
+		-
+			message: '#^Cannot call method assertExitCode\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+			identifier: method.nonObject
+			count: 4
+			path: tests/Feature/Console/CacheEntitiesCommandTest.php
 
 		-
 			message: '#^Cannot call method assertSuccessful\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
@@ -301,6 +325,30 @@ parameters:
 			path: tests/Feature/Console/GenerateTranslationCommandTest.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/LocaleControllerTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/LocaleControllerTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/LocaleControllerTest.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Auth\\SessionGuard\:\:logout\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: tests/Feature/Http/LocaleControllerTest.php
+
+		-
 			message: '#^Cannot call method forgetInstance\(\) on Illuminate\\Foundation\\Application\|null\.$#'
 			identifier: method.nonObject
 			count: 3
@@ -321,19 +369,19 @@ parameters:
 		-
 			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
 			identifier: method.nonObject
-			count: 20
+			count: 23
 			path: tests/Integration/DashboardServiceProviderTest.php
 
 		-
 			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\)\.$#'
 			identifier: staticMethod.dynamicCall
-			count: 10
+			count: 11
 			path: tests/Integration/DashboardServiceProviderTest.php
 
 		-
 			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\)\.$#'
 			identifier: staticMethod.dynamicCall
-			count: 3
+			count: 4
 			path: tests/Integration/DashboardServiceProviderTest.php
 
 		-
@@ -1267,71 +1315,21 @@ parameters:
 			path: tests/Integration/Infrastructure/EloquentEntityRepositoryTest.php
 
 		-
-			message: '#^Parameter \#2 \$fieldClass of method BlackParadise\\LaravelAdmin\\Core\\FieldTypeRegistry\:\:register\(\) expects class\-string\<BlackParadise\\CoreAdmin\\Domain\\Fields\\Base\\AbstractField\>, string given\.$#'
-			identifier: argument.type
-			count: 2
-			path: tests/Unit/Core/FieldTypeRegistryTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\TestCase\:\:createStub\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 8
-			path: tests/Unit/Core/UseCaseFactoryTest.php
-
-		-
-			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertIsString\(\) with string will always evaluate to true\.$#'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: tests/Unit/Infrastructure/Validation/RuleSetToLaravelConverterTest.php
-
-		-
-			message: '#^Cannot call method forgetInstance\(\) on Illuminate\\Foundation\\Application\|null\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: tests/Unit/Support/TranslationHelpersTest.php
-
-		-
-			message: '#^Method BlackParadise\\CoreAdmin\\Domain\\Contracts\\Fields\\FieldContract@anonymous/tests/Unit/Support/TranslationHelpersTest\.php\:69\:\:meta\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Support/TranslationHelpersTest.php
-
-		-
-			message: '#^Method BlackParadise\\CoreAdmin\\Domain\\Contracts\\Fields\\FieldContract@anonymous/tests/Unit/Support/TranslationHelpersTest\.php\:69\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Support/TranslationHelpersTest.php
-
-		# --- Added for tests introduced with the bpadmin v3 review fixes ---
-
-		-
-			message: '#^Cannot call method assertExitCode\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
-			identifier: method.nonObject
-			count: 4
-			path: tests/Feature/Console/CacheEntitiesCommandTest.php
-
-		-
-			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: tests/Integration/DashboardServiceProviderTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Integration/DashboardServiceProviderTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: tests/Integration/DashboardServiceProviderTest.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$(email|name|password)\.$#'
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsProviderTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsProviderTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
 			path: tests/Integration/Infrastructure/EloquentRelationOptionsProviderTest.php
 
 		-
@@ -1395,9 +1393,21 @@ parameters:
 			path: tests/Integration/Infrastructure/RelationWriterStrategyTest.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$(email|name|password)\.$#'
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 1
+			path: tests/Integration/Infrastructure/RelationWriterStrategyTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/RelationWriterStrategyTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
 			path: tests/Integration/Infrastructure/RelationWriterStrategyTest.php
 
 		-
@@ -1429,3 +1439,39 @@ parameters:
 			identifier: staticMethod.dynamicCall
 			count: 2
 			path: tests/Integration/Infrastructure/RelationWriterStrategyTest.php
+
+		-
+			message: '#^Parameter \#2 \$fieldClass of method BlackParadise\\LaravelAdmin\\Core\\FieldTypeRegistry\:\:register\(\) expects class\-string\<BlackParadise\\CoreAdmin\\Domain\\Fields\\Base\\AbstractField\>, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: tests/Unit/Core/FieldTypeRegistryTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\TestCase\:\:createStub\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 9
+			path: tests/Unit/Core/UseCaseFactoryTest.php
+
+		-
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertIsString\(\) with string will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: tests/Unit/Infrastructure/Validation/RuleSetToLaravelConverterTest.php
+
+		-
+			message: '#^Cannot call method forgetInstance\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Unit/Support/TranslationHelpersTest.php
+
+		-
+			message: '#^Method BlackParadise\\CoreAdmin\\Domain\\Contracts\\Fields\\FieldContract@anonymous/tests/Unit/Support/TranslationHelpersTest\.php\:69\:\:meta\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Support/TranslationHelpersTest.php
+
+		-
+			message: '#^Method BlackParadise\\CoreAdmin\\Domain\\Contracts\\Fields\\FieldContract@anonymous/tests/Unit/Support/TranslationHelpersTest\.php\:69\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: tests/Unit/Support/TranslationHelpersTest.php

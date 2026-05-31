@@ -18,9 +18,9 @@ final class BPAdminFileUrl
     /**
      * Build a temporary signed download URL for the given disk + path.
      *
-     * @param string $disk    Storage disk name (must be in `bpadmin.allowed_download_disks`).
-     * @param string $path    Path on the disk, relative to the disk root.
-     * @param int    $minutes Link lifetime in minutes (default 15).
+     * @param string $disk Storage disk name (must be in `bpadmin.allowed_download_disks`).
+     * @param string $path Path on the disk, relative to the disk root.
+     * @param int $minutes Link lifetime in minutes (default 15).
      */
     public static function signed(string $disk, string $path, int $minutes = 15): string
     {

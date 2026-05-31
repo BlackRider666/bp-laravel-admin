@@ -197,7 +197,7 @@ final class RelationWriterStrategyTest extends TestCase
      */
     private function definitionWithStrategy(string $strategy): EntityDefinition
     {
-        return new class($strategy) extends EntityDefinition {
+        return new class ($strategy) extends EntityDefinition {
             public string $model = TestItem::class;
 
             /**
@@ -226,7 +226,7 @@ final class RelationWriterStrategyTest extends TestCase
      */
     private function definitionWithMorphStrategy(string $strategy): EntityDefinition
     {
-        return new class($strategy) extends EntityDefinition {
+        return new class ($strategy) extends EntityDefinition {
             public string $model = TestItem::class;
 
             /**

@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Casts\AsEncryptedArrayObject;
 use Illuminate\Database\Eloquent\Casts\AsEncryptedCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
+use Throwable;
 
 /**
  * Eloquent implementation of {@see EntityMutatorInterface}.
@@ -74,7 +75,7 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
                 }
                 return $host->refresh();
             });
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->deleteStoredPaths($uploadedPaths);
             throw $e;
         }
@@ -122,7 +123,7 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
                 }
                 return $existing->refresh();
             });
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->deleteStoredPaths($uploadedPaths);
             throw $e;
         }
@@ -198,7 +199,7 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
             }
             try {
                 $this->fileStorage->delete($path, $item['disk']);
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Swallow — never re-raise a cleanup failure.
             }
         }
@@ -213,8 +214,8 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
      * - 'translatable': array JSON-encoded unless model cast or managedByModel flag suppresses it
      */
     /**
-     * @param array<string, mixed>                          $attributes
-     * @param list<array{path: string, disk: ?string}>     $storedPaths Receives stored file paths, by reference.
+     * @param array<string, mixed> $attributes
+     * @param list<array{path: string, disk: ?string}> $storedPaths Receives stored file paths, by reference.
      * @return array<string, mixed>
      */
     private function filterAttributes(
@@ -430,7 +431,7 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
                 $disk = $diskByField[$name] ?? null;
                 try {
                     $this->fileStorage->delete($oldPath, $disk);
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     // Swallow — cleanup of replaced files must not break the response.
                 }
             }
