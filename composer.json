@@ -1,42 +1,77 @@
 {
-  "name": "black-paradise/laravel-admin",
-  "description": "Generate Admin Panel for Laravel",
-  "type": "library",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Vladuslav Manzhos",
-      "email": "loverider2012@gmail.com"
-    }
-  ],
-  "minimum-stability": "stable",
-  "require": {
-      "laravel/framework": "^11.0",
-      "intervention/image": "^2.6",
-      "doctrine/dbal": "^4.0"
-  },
-  "autoload": {
-    "psr-4": {
-        "BlackParadise\\LaravelAdmin\\": "src/"
+    "name": "black-paradise/laravel-admin",
+    "description": "Laravel adapter for BPAdmin — config-driven CRUD admin panel (v3)",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vladuslav Manzhos",
+            "email": "loverider2012@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0|^12.0|^13.0",
+        "black-paradise/core-admin": "^1.0"
     },
-    "files": [
-      "src/helpers.php"
-    ]
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "BlackParadise\\LaravelAdmin\\DashboardServiceProvider"
-      ]
+    "autoload": {
+        "psr-4": {
+            "BlackParadise\\LaravelAdmin\\": "src/"
+        },
+        "files": [
+            "src/Support/translation_helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BlackParadise\\LaravelAdmin\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "BlackParadise\\LaravelAdmin\\DashboardServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.1",
+        "phpunit/phpunit": "^12.5",
+        "laravel/pint": "^1.13",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "larastan/larastan": "^3.0",
+        "rector/rector": "^2.0",
+        "driftingly/rector-laravel": "^2.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0"
+    },
+    "scripts": {
+        "cs:check": "vendor/bin/pint --config=pint.json --test src tests",
+        "cs:fix": "vendor/bin/pint --config=pint.json src tests",
+        "analyse": "vendor/bin/phpstan analyse --memory-limit=1G",
+        "rector": "vendor/bin/rector --dry-run --memory-limit=1G",
+        "rector:apply": "vendor/bin/rector --memory-limit=1G",
+        "test": "vendor/bin/pest",
+        "test:arch": "vendor/bin/pest --testsuite=Architecture",
+        "test:coverage": "vendor/bin/pest --coverage --min=70",
+        "test:coverage:strict": [
+            "vendor/bin/pest --coverage --coverage-clover=coverage.clover.xml --min=70",
+            "php scripts/check-coverage.php coverage.clover.xml scripts/coverage-thresholds.json ."
+        ],
+        "qa": [
+            "@cs:check",
+            "@analyse",
+            "@rector",
+            "@test"
+        ]
     }
-  },
-  "scripts": {
-    "post-package-install": [
-      "php artisan vendor:publish --tag=bpadmin::min",
-      "echo 'The \"black-paradise/laravel-admin\" package has been successfully installed!'",
-      "echo 'Minimal files have been published.'",
-      "echo 'Please configure the config file config/bpadmin.php and run the following command to complete the installation:'",
-      "echo 'php artisan bpadmin:install'"
-    ]
-  }
 }

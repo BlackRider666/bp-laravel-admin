@@ -1,0 +1,6 @@
+{
+    "Infrastructure": { "path": "src/Infrastructure", "min": 70.0 },
+    "Controllers":    { "path": "src/Http/Controllers", "min": 80.0 },
+    "Middleware":     { "path": "src/Http/Middleware", "min": 80.0 },
+    "Requests":       { "path": "src/Http/Requests", "min": 75.0 }
+}
