@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Pest bootstrap for bp-laravel-admin-next.
+ * Pest bootstrap for bp-laravel-admin.
  *
  * Існуючі PHPUnit-тести в tests/Unit/, tests/Integration/, tests/Feature/
  * продовжують працювати через Pest's compat layer. Нові arch-тести —
