@@ -265,6 +265,12 @@ parameters:
 			path: src/Support/AvailableLocalesResolver.php
 
 		-
+			message: '#^Variable method call on Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: method.dynamicName
+			count: 1
+			path: src/Support/EmbeddedChildWriter.php
+
+		-
 			message: '#^Dynamic call to static method Illuminate\\Translation\\Translator\:\:has\(\)\.$#'
 			identifier: staticMethod.dynamicCall
 			count: 2
@@ -628,6 +634,48 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerCreatableTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerCreatableTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerCreatableTest.php
+
+		-
+			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerCreatableTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerCreatableTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerCreatableTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerCreatableTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
 			path: tests/Integration/Http/Controllers/AdminEntityControllerEmbedTest.php
 
 		-
@@ -725,6 +773,54 @@ parameters:
 			identifier: staticMethod.dynamicCall
 			count: 1
 			path: tests/Integration/Http/Controllers/AdminEntityControllerFilterTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerHasOneEmbedCreateTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerHasOneEmbedCreateTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerHasOneEmbedCreateTest.php
+
+		-
+			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerHasOneEmbedCreateTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerHasOneEmbedCreateTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerHasOneEmbedCreateTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerHasOneEmbedCreateTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertNotNull\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: tests/Integration/Http/Controllers/AdminEntityControllerHasOneEmbedCreateTest.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'

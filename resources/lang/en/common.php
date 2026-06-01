@@ -12,6 +12,8 @@ return [
         'confirm' => 'Confirm',
         'search'  => 'Search',
         'new'     => 'New :entity',
+        'add'     => 'Add row',
+        'remove'  => 'Remove',
     ],
     'table' => [
         'no_records'         => 'No records found.',
