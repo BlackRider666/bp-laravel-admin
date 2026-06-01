@@ -45,6 +45,14 @@ abstract class EntityDefinition implements EntityDefinitionContract
     public int $perPage = 15;
 
     /**
+     * Whether records of this entity can be created directly through the admin
+     * panel. Set to false for embed-only definitions (registered solely as
+     * embed targets) so their create form and store endpoint are not directly
+     * accessible — see {@see isCreatable()}.
+     */
+    public bool $creatable = true;
+
+    /**
      * Derive the entity name from the class name.
      * Users → users, OrderItems → order_items.
      *
@@ -129,6 +137,17 @@ abstract class EntityDefinition implements EntityDefinitionContract
     public function searchFields(): array
     {
         return [];
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Returns the {@see $creatable} flag. Override the property (or this method)
+     * to mark an entity as embed-only / not directly creatable.
+     */
+    public function isCreatable(): bool
+    {
+        return $this->creatable;
     }
 
     /**

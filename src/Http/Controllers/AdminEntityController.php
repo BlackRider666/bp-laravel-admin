@@ -17,6 +17,7 @@ use BlackParadise\CoreAdmin\Domain\Exceptions\ValidationException;
 use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityKey;
 use BlackParadise\LaravelAdmin\Core\EntityDefinitionRegistry;
 use BlackParadise\LaravelAdmin\Core\UseCaseFactory;
+use BlackParadise\LaravelAdmin\EntityDefinition;
 use BlackParadise\LaravelAdmin\Http\Presenters\EntityPresenterInterface;
 use BlackParadise\LaravelAdmin\Http\Requests\EntityBulkDestroyRequest;
 use BlackParadise\LaravelAdmin\Http\Requests\EntityIndexRequest;
@@ -74,6 +75,11 @@ final class AdminEntityController extends AbstractAdminController
     {
         $definition = $this->registry->get($this->entityName($request));
 
+        // Embed-only definitions have no standalone create surface.
+        if ($definition instanceof EntityDefinition && !$definition->isCreatable()) {
+            return $this->presenter->notFound();
+        }
+
         try {
             $fields = $this->useCases->buildFormView($definition)->execute('create');
 
@@ -86,6 +92,12 @@ final class AdminEntityController extends AbstractAdminController
     public function store(EntityWriteRequest $request): Response
     {
         $definition = $request->definition();
+
+        // Embed-only definitions have no standalone create surface.
+        if ($definition instanceof EntityDefinition && !$definition->isCreatable()) {
+            return $this->presenter->notFound();
+        }
+
         $raw = $request->attributesForWrite();
 
         try {
