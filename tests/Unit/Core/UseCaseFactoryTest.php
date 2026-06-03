@@ -14,6 +14,7 @@ use BlackParadise\CoreAdmin\Domain\Contracts\Auth\AuthorizationProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\RelationOptionsProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Events\EventDispatcherContract;
+use BlackParadise\CoreAdmin\Domain\Contracts\LocaleProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Validation\ValidationProviderContract;
 use BlackParadise\CoreAdmin\Domain\Mutators\EntityMutatorInterface;
 use BlackParadise\CoreAdmin\Domain\Repositories\EntityRepositoryInterface;
@@ -49,6 +50,9 @@ final class UseCaseFactoryTest extends TestCase
         $this->dispatcher    = $this->createStub(EventDispatcherContract::class);
         $this->definition    = $this->createStub(EntityDefinitionContract::class);
 
+        $localeProvider = $this->createStub(LocaleProviderContract::class);
+        $localeProvider->method('availableLocales')->willReturn(['en']);
+
         $this->factory = new UseCaseFactory(
             repository: $this->repository,
             mutator: $this->mutator,
@@ -57,6 +61,7 @@ final class UseCaseFactoryTest extends TestCase
             dispatcher: $this->dispatcher,
             registry: new EntityDefinitionRegistry(),
             relationOptions: $this->createStub(RelationOptionsProviderContract::class),
+            localeProvider: $localeProvider,
         );
     }
 

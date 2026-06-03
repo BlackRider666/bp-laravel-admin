@@ -30,18 +30,29 @@ final readonly class EloquentRelationOptionsProvider implements RelationOptionsP
             return [];
         }
 
-        /** @var Model $model */
         $model = new $targetClass();
 
         $keyName       = $model->getKeyName();
         $displayField  = $field->displayField();
         $effectiveLimit = max(1, $limit);
 
-        $rows = $model::query()
-            ->select([$keyName, $displayField])
+        // Deduplicate columns when displayField === keyName to avoid a
+        // "duplicate column" error on databases that disallow it.
+        $columns = $displayField === $keyName
+            ? [$keyName]
+            : [$keyName, $displayField];
+
+        $query = $model::query()
+            ->select($columns)
             ->orderBy($displayField)
-            ->limit($effectiveLimit)
-            ->get();
+            ->limit($effectiveLimit);
+
+        $constraints = $field->optionConstraints();
+        foreach ($constraints as $constraint) {
+            $query->where($constraint['column'], $constraint['value']);
+        }
+
+        $rows = $query->get();
 
         $options = [];
         foreach ($rows as $row) {

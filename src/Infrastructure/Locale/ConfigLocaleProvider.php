@@ -10,11 +10,19 @@ final class ConfigLocaleProvider implements LocaleProviderContract
 {
     public function availableLocales(): array
     {
-        return config('bpadmin.languages', [config('app.locale', 'en')]);
+        $locales = config('bpadmin.locales');
+
+        if (!is_array($locales) || $locales === []) {
+            $appLocale = config('app.locale');
+            return [is_string($appLocale) && $appLocale !== '' ? $appLocale : 'en'];
+        }
+
+        return $locales;
     }
 
     public function defaultLocale(): string
     {
-        return config('app.locale', 'en');
+        $locale = config('app.locale');
+        return is_string($locale) && $locale !== '' ? $locale : 'en';
     }
 }

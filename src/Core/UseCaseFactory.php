@@ -16,10 +16,12 @@ use BlackParadise\CoreAdmin\Domain\Contracts\Entity\EntityRecordContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\RelationOptionsProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Events\EventDispatcherContract;
+use BlackParadise\CoreAdmin\Domain\Contracts\LocaleProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Validation\ValidationProviderContract;
 use BlackParadise\CoreAdmin\Domain\Mutators\EntityMutatorInterface;
 use BlackParadise\CoreAdmin\Domain\Repositories\EntityRepositoryInterface;
 use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityKey;
+use BlackParadise\LaravelAdmin\Infrastructure\Validation\LocaleAwareValidationWrapper;
 
 final readonly class UseCaseFactory
 {
@@ -31,6 +33,7 @@ final readonly class UseCaseFactory
         private EventDispatcherContract $dispatcher,
         private EntityDefinitionRegistry $registry,
         private RelationOptionsProviderContract $relationOptions,
+        private LocaleProviderContract $localeProvider,
     ) {}
 
     public function listRecords(EntityDefinitionContract $def): ListRecordsUseCase
@@ -49,7 +52,7 @@ final readonly class UseCaseFactory
             $this->mutator,
             $this->authorization,
             $def,
-            $this->validator,
+            new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def),
             $this->dispatcher,
         );
     }
@@ -61,7 +64,7 @@ final readonly class UseCaseFactory
             $this->mutator,
             $this->authorization,
             $def,
-            $this->validator,
+            new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def),
             $this->dispatcher,
         );
     }

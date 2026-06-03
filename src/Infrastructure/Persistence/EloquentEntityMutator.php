@@ -11,6 +11,7 @@ use BlackParadise\CoreAdmin\Domain\Contracts\Files\FileStorageProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\TransactionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\ValueHasherContract;
 use BlackParadise\CoreAdmin\Domain\Entity\EntityRecord;
+use BlackParadise\CoreAdmin\Domain\Exceptions\ValidationException;
 use BlackParadise\CoreAdmin\Domain\Fields\FileField;
 use BlackParadise\CoreAdmin\Domain\Fields\ImageField;
 use BlackParadise\CoreAdmin\Domain\Fields\RelationFieldTypes;
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Casts\AsEncryptedArrayObject;
 use Illuminate\Database\Eloquent\Casts\AsEncryptedCollection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Throwable;
 
@@ -75,6 +77,9 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
                 }
                 return $host->refresh();
             });
+        } catch (QueryException $e) {
+            $this->deleteStoredPaths($uploadedPaths);
+            throw $this->convertQueryException($e);
         } catch (Throwable $e) {
             $this->deleteStoredPaths($uploadedPaths);
             throw $e;
@@ -123,6 +128,9 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
                 }
                 return $existing->refresh();
             });
+        } catch (QueryException $e) {
+            $this->deleteStoredPaths($uploadedPaths);
+            throw $this->convertQueryException($e);
         } catch (Throwable $e) {
             $this->deleteStoredPaths($uploadedPaths);
             throw $e;
@@ -183,6 +191,85 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
     }
 
     /**
+     * Map an Illuminate QueryException to a domain ValidationException (HTTP 422)
+     * only for SQLSTATE codes that represent *user-correctable* data violations.
+     *
+     * Mapped SQLSTATE codes:
+     *   22001 — string data, right truncation ("Data too long for column …")
+     *   23000 → UNIQUE violation only — converted to field-level 422.
+     *
+     * SQLSTATE 23000 covers UNIQUE, FK, and NOT-NULL violations. FK and NOT-NULL
+     * failures are server-side bugs (wrong FK value in code, missing NOT-NULL
+     * default) that the end-user cannot fix — re-throwing them as QueryException
+     * lets the framework render HTTP 500 and surface the real bug.
+     *
+     * Driver-specific unique violation codes:
+     *   MySQL / MariaDB : errorInfo[1] === 1062
+     *   SQLite          : errorInfo[1] === 19 AND message contains "UNIQUE constraint"
+     *   PostgreSQL      : errorInfo[0] === '23505' (unique_violation)
+     *
+     * @throws ValidationException for 22001 or UNIQUE-23000 violations.
+     * @throws QueryException for FK / NOT-NULL / all other DB errors.
+     */
+    private function convertQueryException(QueryException $e): never
+    {
+        $sqlState  = (string) ($e->errorInfo[0] ?? '');
+        $nativeCode = (int) ($e->errorInfo[1] ?? 0);
+        $message    = $e->getMessage();
+
+        if ($sqlState === '22001') {
+            throw new ValidationException(
+                ['_database' => ['The value is too long for one of the fields.']],
+                $message,
+            );
+        }
+
+        // PostgreSQL raises a dedicated SQLSTATE for unique violations.
+        if ($sqlState === '23505') {
+            throw new ValidationException(
+                ['_database' => ['A record with those values already exists.']],
+                $message,
+            );
+        }
+
+        if ($sqlState === '23000') {
+            $isUnique = $this->isUniqueViolation($nativeCode, $message);
+
+            if ($isUnique) {
+                throw new ValidationException(
+                    ['_database' => ['A record with those values already exists.']],
+                    $message,
+                );
+            }
+
+            // FK / NOT-NULL / other 23000 sub-types → re-throw as server error.
+            throw $e;
+        }
+
+        throw $e;
+    }
+
+    /**
+     * Determine whether a SQLSTATE 23000 exception is specifically a UNIQUE
+     * constraint violation (as opposed to FK or NOT-NULL).
+     *
+     * MySQL / MariaDB: native error code 1062.
+     * SQLite         : native code 19 (SQLITE_CONSTRAINT) with "UNIQUE constraint"
+     *                  in the message. Note: SQLite 3.25+ also raises code 2067
+     *                  (SQLITE_CONSTRAINT_UNIQUE) but PDO normalises to 19.
+     */
+    private function isUniqueViolation(int $nativeCode, string $message): bool
+    {
+        // MySQL / MariaDB
+        if ($nativeCode === 1062) {
+            return true;
+        }
+        // SQLite — native code 19 is the generic SQLITE_CONSTRAINT; we must
+        // inspect the message to distinguish UNIQUE from FK / NOT NULL.
+        return $nativeCode === 19 && stripos($message, 'UNIQUE constraint') !== false;
+    }
+
+    /**
      * Best-effort cleanup of files written to disk before a failed transaction.
      *
      * Exceptions thrown by the storage backend are swallowed: rollback already
@@ -209,11 +296,10 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
      * Filter raw attributes to only the fields declared in the entity definition.
      *
      * Applies field-type-specific transformations:
-     * - 'hashed': empty values stripped, non-empty hashed
-     * - 'file'/'image': UploadedFile stored and replaced with path
-     * - 'translatable': array JSON-encoded unless model cast or managedByModel flag suppresses it
-     */
-    /**
+     * - 'hashed': empty values stripped, non-empty hashed.
+     * - 'file'/'image': UploadedFile stored to disk, replaced with path string.
+     * - 'translatable': array JSON-encoded unless model cast or managedByModel flag suppresses it.
+     *
      * @param array<string, mixed> $attributes
      * @param list<array{path: string, disk: ?string}> $storedPaths Receives stored file paths, by reference.
      * @return array<string, mixed>
@@ -226,10 +312,14 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
         $columnFields = array_filter(
             $definition->fields(),
             fn(FieldContract $f): bool => !RelationFieldTypes::isSideEffect($f->type())
-                && $f->writable() === true,
+                && $f->writable(),
         );
         $allowed = array_map(fn(FieldContract $f): string => $f->name(), $columnFields);
         $filtered = array_intersect_key($attributes, array_flip($allowed));
+
+        // Resolved lazily once for the translatable-encoding check; avoids
+        // repeated Service Container lookups inside the field loop.
+        $modelInstance = null;
 
         foreach ($columnFields as $field) {
             $name = $field->name();
@@ -240,9 +330,7 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
             if ($field->type() === 'hashed') {
                 $value = $filtered[$name];
                 if (
-                    $value === ''
-                    || $value === null
-                    || $value === false
+                    in_array($value, ['', null, false], true)
                     || (is_string($value) && trim($value) === '')
                 ) {
                     unset($filtered[$name]);
@@ -270,9 +358,9 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
             }
 
             if ($field->type() === 'translatable' && isset($filtered[$name]) && is_array($filtered[$name])) {
-                // Resolve host model instance once per definition to read casts.
-                $model = resolve($definition->modelClass());
-                if ($this->shouldEncodeTranslatable($field, $model)) {
+                // Resolve host model instance once per filterAttributes() call.
+                $modelInstance ??= resolve($definition->modelClass());
+                if ($this->shouldEncodeTranslatable($field, $modelInstance)) {
                     $filtered[$name] = json_encode($filtered[$name], JSON_UNESCAPED_UNICODE);
                 }
             }

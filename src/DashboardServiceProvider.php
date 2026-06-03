@@ -294,8 +294,9 @@ final class DashboardServiceProvider extends ServiceProvider
 
         $relative = substr($filePath, strlen($bestDir) + 1);
         $relative = str_replace(['/', '\\'], '\\', $relative);
-        /** @var class-string */
-        return rtrim($bestNs, '\\') . '\\' . substr($relative, 0, -4);
+        $class    = rtrim($bestNs, '\\') . '\\' . substr($relative, 0, -4);
+
+        return class_exists($class) ? $class : null;
     }
 
     /**

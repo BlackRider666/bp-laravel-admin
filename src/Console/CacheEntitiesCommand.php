@@ -67,7 +67,10 @@ final class CacheEntitiesCommand extends Command
 
         $found = [];
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory)) as $file) {
-            if (!$file->isFile() || $file->getExtension() !== 'php') {
+            if (!$file->isFile()) {
+                continue;
+            }
+            if ($file->getExtension() !== 'php') {
                 continue;
             }
             $real = $file->getRealPath();
@@ -75,7 +78,10 @@ final class CacheEntitiesCommand extends Command
                 continue;
             }
             $class = $this->classFromPath($real);
-            if ($class === null || !class_exists($class)) {
+            if ($class === null) {
+                continue;
+            }
+            if (!class_exists($class)) {
                 continue;
             }
             if (!is_subclass_of($class, EntityDefinition::class)) {

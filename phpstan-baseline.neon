@@ -181,7 +181,19 @@ parameters:
 			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
 
 		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:getConnection\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
+
+		-
 			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:orderBy\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
+
+		-
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:orderByRaw\(\)\.$#'
 			identifier: staticMethod.dynamicCall
 			count: 1
 			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
@@ -195,6 +207,12 @@ parameters:
 		-
 			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:whereNotIn\(\)\.$#'
 			identifier: staticMethod.dynamicCall
+			count: 1
+			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
+
+		-
+			message: '#^Parameter \#1 \$sql of method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:orderByRaw\(\) expects literal\-string, string given\.$#'
+			identifier: argument.type
 			count: 1
 			path: src/Infrastructure/Persistence/EloquentEntityRepository.php
 
@@ -241,8 +259,8 @@ parameters:
 			path: src/Infrastructure/Persistence/MorphFilePersister.php
 
 		-
-			message: '#^Parameter \#2 \$ids of method BlackParadise\\LaravelAdmin\\Infrastructure\\Persistence\\RelationWriter\:\:buildBelongsToManySyncPayload\(\) expects array\<int, int\|string\>, list\<float\|int\|string\> given\.$#'
-			identifier: argument.type
+			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:whereIn\(\)\.$#'
+			identifier: staticMethod.dynamicCall
 			count: 1
 			path: src/Infrastructure/Persistence/RelationWriter.php
 
@@ -1066,6 +1084,54 @@ parameters:
 			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
 			identifier: return.type
 			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityMutatorDbExceptionTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityMutatorDbExceptionTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityMutatorDbExceptionTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: tests/Integration/Infrastructure/EloquentEntityMutatorDbExceptionTest.php
+
+		-
+			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityMutatorConstraintViolationTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityMutatorConstraintViolationTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityMutatorConstraintViolationTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: tests/Integration/Infrastructure/EloquentEntityMutatorConstraintViolationTest.php
+
+		-
+			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
+			identifier: return.type
+			count: 1
 			path: tests/Integration/Infrastructure/EloquentEntityMutatorMorphFileTest.php
 
 		-
@@ -1321,6 +1387,24 @@ parameters:
 			path: tests/Integration/Infrastructure/EloquentEntityMutatorTranslatableTest.php
 
 		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityRepositoryMorphFileTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityRepositorySortableTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentEntityRepositoryTranslatableSortTest.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1414,6 +1498,48 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 1
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsConstraintsTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsConstraintsTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsConstraintsTest.php
+
+		-
+			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsConstraintsTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsConstraintsTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsConstraintsTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: tests/Integration/Infrastructure/EloquentRelationOptionsConstraintsTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
 			path: tests/Integration/Infrastructure/EloquentRelationOptionsProviderTest.php
 
 		-
@@ -1475,6 +1601,48 @@ parameters:
 			identifier: staticMethod.dynamicCall
 			count: 6
 			path: tests/Integration/Infrastructure/EloquentRelationOptionsProviderTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/RelationWriterPreShapedScopeGuardTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/RelationWriterPreShapedScopeGuardTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/RelationWriterPreShapedScopeGuardTest.php
+
+		-
+			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Integration/Infrastructure/RelationWriterPreShapedScopeGuardTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/Infrastructure/RelationWriterPreShapedScopeGuardTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/Infrastructure/RelationWriterPreShapedScopeGuardTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: tests/Integration/Infrastructure/RelationWriterPreShapedScopeGuardTest.php
 
 		-
 			message: '#^Access to an undefined property BlackParadise\\LaravelAdmin\\Tests\\Integration\\Fixtures\\TestComment\:\:\$created_at\.$#'
@@ -1545,8 +1713,14 @@ parameters:
 		-
 			message: '#^Dynamic call to static method PHPUnit\\Framework\\TestCase\:\:createStub\(\)\.$#'
 			identifier: staticMethod.dynamicCall
-			count: 9
+			count: 10
 			path: tests/Unit/Core/UseCaseFactoryTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\TestCase\:\:createStub\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 6
+			path: tests/Unit/Infrastructure/Validation/LocaleAwareValidationWrapperTest.php
 
 		-
 			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertIsString\(\) with string will always evaluate to true\.$#'

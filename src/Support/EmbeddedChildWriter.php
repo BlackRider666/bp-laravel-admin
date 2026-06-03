@@ -6,6 +6,7 @@ namespace BlackParadise\LaravelAdmin\Support;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\EntityRecordContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
+use BlackParadise\CoreAdmin\Domain\Fields\Base\AbstractRelationField;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Model;
 final readonly class EmbeddedChildWriter
 {
     /**
-     * @param array<string, array{field: \BlackParadise\CoreAdmin\Domain\Fields\Base\AbstractRelationField, payload: array<string, mixed>}> $defer
+     * @param array<string, array{field: AbstractRelationField, payload: array<string, mixed>}> $defer
      */
     public function writeAll(
         EntityDefinitionContract $hostDefinition,

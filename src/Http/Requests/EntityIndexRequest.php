@@ -34,7 +34,10 @@ final class EntityIndexRequest extends FormRequest
      */
     public function rules(): array
     {
-        $sortable = array_map(fn(FieldContract $f): string => $f->name(), $this->definition()->fields());
+        $sortable = array_map(
+            fn(FieldContract $f): string => $f->name(),
+            array_filter($this->definition()->fields(), fn(FieldContract $f): bool => $f->isSortable()),
+        );
 
         return [
             'sort_by'  => ['nullable', 'string', Rule::in($sortable)],

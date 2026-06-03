@@ -31,7 +31,7 @@ final class TestItemDefinition extends EntityDefinition
     public function fields(): array
     {
         return [
-            TextField::make('name'),
+            TextField::make('name')->sortable(),
             TextField::make('email'),
         ];
     }

@@ -267,7 +267,7 @@ final class AdminEntityController extends AbstractAdminController
         $message = $action->label() . ' was dispatched.';
 
         if ($rowId !== null) {
-            return back()->with('success', $message . ' (#' . (string) $rowId . ')');
+            return back()->with('success', $message . ' (#' . $rowId . ')');
         }
 
         return back()->with('success', $message);

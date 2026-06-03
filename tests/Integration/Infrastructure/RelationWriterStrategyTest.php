@@ -18,6 +18,7 @@ use BlackParadise\LaravelAdmin\Tests\Integration\Fixtures\TestItem;
 use BlackParadise\LaravelAdmin\Tests\Integration\Fixtures\TestMorphComment;
 use BlackParadise\LaravelAdmin\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Sleep;
 
 /**
  * Verifies HasManyField/MorphManyField strategy semantics in RelationWriter:
@@ -121,7 +122,7 @@ final class RelationWriterStrategyTest extends TestCase
         $originalAt = $original->created_at;
 
         // small wait so timestamps would visibly diverge if a replace happened
-        usleep(10000);
+        Sleep::usleep(10000);
 
         $this->mutator->update(
             new EntityKey($created->id(), 'int'),
@@ -203,7 +204,7 @@ final class RelationWriterStrategyTest extends TestCase
             /**
              * @param 'replace'|'merge'|'append' $strat
              */
-            public function __construct(private string $strat) {}
+            public function __construct(private readonly string $strat) {}
 
             public function resolveName(): string
             {
@@ -232,7 +233,7 @@ final class RelationWriterStrategyTest extends TestCase
             /**
              * @param 'replace'|'merge'|'append' $strat
              */
-            public function __construct(private string $strat) {}
+            public function __construct(private readonly string $strat) {}
 
             public function resolveName(): string
             {

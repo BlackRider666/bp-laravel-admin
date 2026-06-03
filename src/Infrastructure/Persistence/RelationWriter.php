@@ -126,12 +126,26 @@ final class RelationWriter
         $relationName = $field->relationName();
 
         if ($this->isPreShapedSyncPayload($value)) {
+            // Apply scope-guard to the keys of the pre-shaped payload when the field
+            // declares optionConstraints(). The payload arrives from HTTP form data and
+            // must not bypass the allowed-option set even when shaped as [id => pivot_attrs].
+            $constraints = $field->optionConstraints();
+            if ($constraints !== []) {
+                $allowedIds = $this->filterConstrainedIds($field, array_keys($value));
+                $allowedNormalized = array_map(static fn(mixed $v): string => (string) $v, $allowedIds);
+                $value = array_filter(
+                    $value,
+                    static fn(int|string $k): bool => in_array((string) $k, $allowedNormalized, true),
+                    ARRAY_FILTER_USE_KEY,
+                );
+            }
             $host->{$relationName}()->sync($value);
             return;
         }
 
         // Strictly coerce to ids: accept numeric scalars and non-empty strings.
         // Booleans / null are rejected — they would otherwise pass is_scalar().
+        // Floats with no fractional part (e.g. JSON-decoded integers) are cast to int.
         $ids = [];
         foreach ($value as $v) {
             if (is_int($v)) {
@@ -139,14 +153,67 @@ final class RelationWriter
             } elseif (is_string($v) && $v !== '') {
                 $ids[] = $v;
             } elseif (is_float($v) && !is_nan($v) && !is_infinite($v)) {
-                $ids[] = $v;
+                // Cast whole-number floats to int so type stays array<int, int|string>.
+                $ids[] = (int) $v;
             }
             // bool, null, arrays, objects intentionally skipped.
         }
 
+        // Filter out IDs that violate optionConstraints (scope guard).
+        $ids = $this->filterConstrainedIds($field, $ids);
+
         $syncPayload = $this->buildBelongsToManySyncPayload($field, $ids, $host);
 
         $host->{$relationName}()->sync($syncPayload);
+    }
+
+    /**
+     * Scope-guard: remove IDs that do not belong to the constrained option set.
+     *
+     * When the field declares optionConstraints() (e.g. `->whereOption('guard_name', 'web')`)
+     * we resolve the target model via the relation, query the allowed IDs, and
+     * discard any incoming ID that is not in the allowed set.
+     *
+     * No-op when there are no constraints (avoids an unnecessary DB query).
+     *
+     * @param array<int, int|string> $ids
+     * @return array<int, int|string>
+     */
+    private function filterConstrainedIds(RelationFieldContract $field, array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $constraints = $field->optionConstraints();
+        if ($constraints === []) {
+            return $ids;
+        }
+
+        $targetClass = $field->target();
+        if ($targetClass === '' || !class_exists($targetClass) || !is_subclass_of($targetClass, Model::class)) {
+            return $ids;
+        }
+
+        $targetModel = new $targetClass();
+        $keyName     = $targetModel->getKeyName();
+
+        $query = $targetModel::query()->whereIn($keyName, $ids);
+        foreach ($constraints as $constraint) {
+            $query->where($constraint['column'], $constraint['value']);
+        }
+
+        $allowedIds = $query->pluck($keyName)->all();
+
+        // Normalize to string comparison so int/string key types don't cause mismatches.
+        $allowedNormalized = array_map(static fn(mixed $v): string => (string) $v, $allowedIds);
+
+        return array_values(
+            array_filter(
+                $ids,
+                static fn(int|string $id): bool => in_array((string) $id, $allowedNormalized, true),
+            ),
+        );
     }
 
     /**
