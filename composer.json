@@ -80,7 +80,7 @@
             "url": "../bp-admin-core",
             "options": {
                 "versions": {
-                    "black-paradise/core-admin": "1.0.2"
+                    "black-paradise/core-admin": "1.0.3"
                 }
             }
         }
