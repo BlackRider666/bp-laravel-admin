@@ -6,6 +6,7 @@ namespace BlackParadise\LaravelAdmin\Http\Requests;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
+use BlackParadise\CoreAdmin\Domain\Fields\MorphToField;
 use BlackParadise\CoreAdmin\Domain\Fields\RelationFieldTypes;
 use BlackParadise\LaravelAdmin\Core\EntityDefinitionRegistry;
 use Illuminate\Foundation\Http\FormRequest;
@@ -47,13 +48,23 @@ final class EntityWriteRequest extends FormRequest
      */
     public function attributesForWrite(): array
     {
+        $definition = $this->definition();
+
         $allowed = array_values(array_map(
             fn(FieldContract $f): string => $f->name(),
             array_filter(
-                $this->definition()->fields(),
+                $definition->fields(),
                 fn(FieldContract $f): bool => $f->writable() || RelationFieldTypes::isSideEffect($f->type()),
             ),
         ));
+
+        // morphTo contributes two real columns ({name}_type / {name}_id) that are
+        // not field names themselves — admit them so the picker's submission survives.
+        foreach ($definition->fields() as $f) {
+            if ($f instanceof MorphToField) {
+                $allowed = array_merge($allowed, $f->morphColumns());
+            }
+        }
 
         return $this->only($allowed);
     }

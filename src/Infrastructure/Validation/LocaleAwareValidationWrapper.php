@@ -8,6 +8,10 @@ use BlackParadise\CoreAdmin\Application\UseCases\Entity\RuleBuilder;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\LocaleProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Validation\ValidationProviderContract;
+use BlackParadise\CoreAdmin\Domain\Fields\MorphToField;
+use Closure;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
  * Decorator for ValidationProviderContract that rebuilds validation rules
@@ -24,10 +28,22 @@ use BlackParadise\CoreAdmin\Domain\Contracts\Validation\ValidationProviderContra
  */
 final readonly class LocaleAwareValidationWrapper implements ValidationProviderContract
 {
+    /**
+     * @param string $context Validation context: 'create' (default) or 'update'.
+     *                        In 'update' context, fields absent from the payload have
+     *                        their 'required' rule relaxed to 'sometimes'.
+     * @param list<string> $skipFields Field names to drop from the rule set before
+     *                                 delegating to the inner provider. Used for embedded
+     *                                 hasMany/morphMany children to skip the back-FK field
+     *                                 that the ORM assigns automatically on write.
+     */
     public function __construct(
         private ValidationProviderContract $inner,
         private LocaleProviderContract $localeProvider,
         private EntityDefinitionContract $definition,
+        private string $context = 'create',
+        /** @var list<string> */
+        private array $skipFields = [],
     ) {}
 
     /**
@@ -47,9 +63,154 @@ final readonly class LocaleAwareValidationWrapper implements ValidationProviderC
     {
         // RuleBuilder::build() is the new instance-API (bp-admin-core >= 1.0.2).
         // availableLocales() returns array<string>; RuleBuilder expects list<string>.
-        $builder     = new RuleBuilder(array_values($this->localeProvider->availableLocales()));
-        $localeRules = $builder->build($this->definition);
+        $builder     = new RuleBuilder(array_values($this->localeProvider->availableLocales()), $this->context);
+        $localeRules = $builder->build($this->definition, array_keys($data));
+
+        $localeRules = $this->rewriteRelationExists($localeRules);
+        $localeRules = $this->rewriteMorphToRules($localeRules, $this->context, $data);
+
+        foreach ($this->skipFields as $skip) {
+            unset($localeRules[$skip]);
+        }
 
         $this->inner->validate($data, $localeRules);
+    }
+
+    /**
+     * Rewrite morph_to field rules from the field-name key to per-column keys,
+     * and add A13 membership + existence rules.
+     *
+     * The RuleBuilder emits rules keyed on the field name (e.g. `commentable`),
+     * but morph payloads carry the two real columns (`commentable_type`,
+     * `commentable_id`). Validation against the field name always fails because
+     * neither column is submitted under that key.
+     *
+     * Transformation (A14 + A13):
+     *   commentable: [required]  →  commentable_type: [required, string, in:<allowed>]
+     *                               commentable_id:   [required, <closure: exists check>]
+     *
+     * A13 rules:
+     *   - `in:<allowed>` on `_type`: accepted values are each class's getMorphClass()
+     *     alias AND the FQCN itself (to accept pre-normalisation values from the UI).
+     *   - Closure on `_id`: resolves the submitted `_type` through the Eloquent morph
+     *     map, then checks that a row with the given key exists in that model's table.
+     *     The check is skipped when type or id is empty (the presence rule covers that).
+     *
+     * In 'update' context, missing columns are handled with 'sometimes' (matching
+     * the partial-update semantics already applied by RuleBuilder for scalar fields).
+     *
+     * @param array<string, array<int, string>> $rules
+     * @param array<string, mixed> $data Full incoming payload (used by closure rules for testability).
+     * @return array<string, mixed>
+     */
+    private function rewriteMorphToRules(array $rules, string $context, array $data): array
+    {
+        $presentKeys = array_keys($data);
+
+        foreach ($this->definition->fields() as $field) {
+            if (!$field instanceof MorphToField) {
+                continue;
+            }
+
+            $fieldName = $field->name();
+            if (!array_key_exists($fieldName, $rules)) {
+                continue;
+            }
+
+            $fieldRules = $rules[$fieldName];
+            unset($rules[$fieldName]);
+
+            $isRequired = in_array('required', $fieldRules, true);
+            $typeCol    = $field->typeColumn();
+            $idCol      = $field->idColumn();
+
+            // Build list of allowed morph type values for A13 type-membership check.
+            // Accept both the morph-map alias (getMorphClass()) AND the raw FQCN so
+            // that pre-normalisation values from the UI are not rejected.
+            $allowed = [];
+            foreach (array_keys($field->morphTypeMap()) as $class) {
+                if (class_exists($class)) {
+                    $instance  = new $class();
+                    $allowed[] = $instance->getMorphClass();
+                    $allowed[] = $class;
+                }
+            }
+            $allowed = array_values(array_unique($allowed));
+
+            // In update context, apply partial-update semantics: when the morph
+            // columns are absent from the payload, relax required → sometimes.
+            if ($context === 'update' && !in_array($typeCol, $presentKeys, true)) {
+                $presence = 'sometimes';
+            } else {
+                $presence = $isRequired ? 'required' : 'nullable';
+            }
+
+            $rules[$typeCol] = array_values(array_filter([
+                $presence,
+                'string',
+                $allowed !== [] ? 'in:' . implode(',', $allowed) : null,
+            ]));
+
+            $rules[$idCol] = [
+                $presence,
+                function (string $attribute, mixed $value, Closure $fail) use ($data, $typeCol): void {
+                    $type = isset($data[$typeCol]) && is_string($data[$typeCol]) ? $data[$typeCol] : '';
+                    if ($type === '' || $value === null || $value === '') {
+                        // Presence rule on the sibling column handles emptiness.
+                        return;
+                    }
+
+                    // Resolve morph-map alias to the actual class, falling back to the
+                    // raw value when no alias exists.
+                    $class = Relation::getMorphedModel($type) ?? $type;
+
+                    if (!class_exists($class)
+                        || !is_subclass_of($class, Model::class)
+                        || !$class::query()->whereKey($value)->exists()) {
+                        $fail('The selected ' . $attribute . ' is invalid.');
+                    }
+                },
+            ];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Rewrite the core domain marker `relation_exists:<ModelClass>` into Laravel's
+     * `exists:<table>,<key>`. Core emits the marker because it cannot resolve
+     * Eloquent table/key names; the adapter resolves them here.
+     *
+     * Unknown or non-Eloquent classes have their marker silently dropped to avoid
+     * leaking an unrecognised rule string into the Laravel validator (which would
+     * throw a BadMethodCallException instead of a proper 422).
+     *
+     * @param array<string, array<int, string>> $rules
+     * @return array<string, array<int, string>>
+     */
+    private function rewriteRelationExists(array $rules): array
+    {
+        foreach ($rules as $field => $fieldRules) {
+            foreach ($fieldRules as $i => $rule) {
+                if (!str_starts_with($rule, 'relation_exists:')) {
+                    continue;
+                }
+
+                $modelClass = substr($rule, strlen('relation_exists:'));
+
+                if (!class_exists($modelClass) || !is_subclass_of($modelClass, Model::class)) {
+                    // Unknown class — drop marker; never leak an unrecognised rule to the validator.
+                    unset($rules[$field][$i]);
+                    continue;
+                }
+
+                $model = new $modelClass();
+                $rules[$field][$i] = 'exists:' . $model->getTable() . ',' . $model->getKeyName();
+            }
+
+            $rules[$field] = array_values($rules[$field]);
+        }
+
+        return $rules;
     }
 }

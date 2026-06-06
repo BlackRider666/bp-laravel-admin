@@ -63,10 +63,15 @@ use BlackParadise\LaravelAdmin\Infrastructure\Persistence\RelationWriter;
 use BlackParadise\LaravelAdmin\Infrastructure\Validation\LaravelValidationProvider;
 use BlackParadise\LaravelAdmin\Routing\BPAdminRouteRegistrar;
 use BlackParadise\LaravelAdmin\Support\AvailableLocalesResolver;
+use BlackParadise\LaravelAdmin\Support\DeferredFileOperations;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Throwable;
 
 /**
  * Main service provider for the BPAdmin Laravel adapter.
@@ -109,6 +114,9 @@ final class DashboardServiceProvider extends ServiceProvider
         $this->app->singleton(MorphFilePersister::class);
         $this->app->singleton(RelationWriter::class);
         $this->app->bind(EntityMutatorInterface::class, EloquentEntityMutator::class);
+        // DeferredFileOperations: one instance per request so the mutator and
+        // controller share the same collector within a single HTTP request.
+        $this->app->scoped(DeferredFileOperations::class);
         $this->app->bind(FileStorageProviderContract::class, LaravelFileStorage::class);
         $this->app->bind(ValidationProviderContract::class, LaravelValidationProvider::class);
         $this->app->bind(EventDispatcherContract::class, LaravelEventDispatcher::class);
@@ -154,6 +162,64 @@ final class DashboardServiceProvider extends ServiceProvider
         }
 
         $this->registerEntitiesFromConfig();
+
+        $this->registerForceDeletedFileCleanup();
+    }
+
+    /**
+     * Register a global Eloquent forceDeleted listener to clean up disk files
+     * when a soft-deletable model is permanently removed (prune / forceDelete).
+     *
+     * Only runs for models that use the SoftDeletes trait. Looks up the matching
+     * EntityDefinition in the registry to discover which columns are file/image
+     * fields, then deletes each non-empty path via FileStorageProviderContract.
+     *
+     * Runs AFTER the DB row is gone — disk cleanup is best-effort (errors are
+     * swallowed so the forceDelete outcome is never masked).
+     */
+    private function registerForceDeletedFileCleanup(): void
+    {
+        // Listen to the wildcard Eloquent forceDeleted event fired as
+        // "eloquent.forceDeleted: ModelClass" so we catch all models without
+        // requiring each one to extend a specific base.  The event payload is
+        // the model instance; wildcards receive (eventName, [$model]).
+        Event::listen('eloquent.forceDeleted: *', function (string $event, array $payload): void {
+            $model = $payload[0] ?? null;
+            if (!$model instanceof Model) {
+                return;
+            }
+
+            if (!in_array(SoftDeletes::class, class_uses_recursive($model), true)) {
+                return;
+            }
+
+            $registry = $this->app->make(EntityDefinitionRegistry::class);
+
+            foreach ($registry->all() as $definition) {
+                if ($definition->modelClass() !== $model::class) {
+                    continue;
+                }
+
+                $storage = $this->app->make(FileStorageProviderContract::class);
+
+                foreach ($definition->fields() as $field) {
+                    if (!in_array($field->type(), ['file', 'image'], true)) {
+                        continue;
+                    }
+
+                    $path = $model->getAttribute($field->name());
+                    if (is_string($path) && $path !== '') {
+                        try {
+                            $storage->delete($path);
+                        } catch (Throwable) {
+                            // Best-effort: swallow so the forceDelete outcome is not masked.
+                        }
+                    }
+                }
+
+                break;
+            }
+        });
     }
 
     /**

@@ -13,4 +13,9 @@ final class LaravelValueHasher implements ValueHasherContract
     {
         return Hash::make($value);
     }
+
+    public function isHashed(string $value): bool
+    {
+        return Hash::isHashed($value);
+    }
 }

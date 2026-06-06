@@ -170,6 +170,22 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
             return;
         }
 
+        if ($operator === 'like') {
+            // Escape user-supplied %, _ and \ so they are treated as literals, not
+            // wildcards. The ESCAPE clause declares \ as the escape character.
+            // Use the same pattern as the full-text search path above.
+            // Field name is already whitelisted via validateField() — safe for whereRaw.
+            $escaped = str_replace(
+                ['\\', '%', '_'],
+                ['\\\\', '\\%', '\\_'],
+                (string) $filter->value,
+            );
+            $wrappedColumn = $query->getGrammar()->wrap($filter->field);
+            // Single backslash as the ESCAPE character (SQLite requires single char).
+            $query->whereRaw("{$wrappedColumn} LIKE ? ESCAPE ?", [$escaped, '\\']);
+            return;
+        }
+
         $query->where($filter->field, $filter->operator, $filter->value);
     }
 

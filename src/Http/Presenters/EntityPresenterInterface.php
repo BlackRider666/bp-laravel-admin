@@ -45,4 +45,6 @@ interface EntityPresenterInterface
 
     /** @param array<string, array<string>> $errors */
     public function validationError(array $errors): Response;
+
+    public function actionResult(string $message, ?string $rowId = null): Response;
 }

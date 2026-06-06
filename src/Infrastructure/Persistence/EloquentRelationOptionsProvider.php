@@ -6,6 +6,7 @@ namespace BlackParadise\LaravelAdmin\Infrastructure\Persistence;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\RelationOptionsProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\RelationFieldContract;
+use BlackParadise\CoreAdmin\Domain\Fields\MorphToField;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -63,5 +64,50 @@ final readonly class EloquentRelationOptionsProvider implements RelationOptionsP
         }
 
         return $options;
+    }
+
+    /**
+     * Per-type option lists for a morphTo field's allowed targets.
+     *
+     * Each entry carries the morph-map-aware type value ({@see Model::getMorphClass()}
+     * returns the registered alias when an enforced morph map exists, otherwise the
+     * FQCN), the human label, and that type's records as {id,label}.
+     *
+     * @return list<array{value: string, label: string, options: list<array{id: int|string, label: string}>}>
+     */
+    public function morphOptions(RelationFieldContract $field): array
+    {
+        if (!$field instanceof MorphToField) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($field->morphTypeMap() as $class => $config) {
+            if (!class_exists($class)) {
+                continue;
+            }
+            if (!is_subclass_of($class, Model::class)) {
+                continue;
+            }
+            $model   = new $class();
+            $keyName = $model->getKeyName();
+            $display = $config['display'];
+
+            $columns = $display === $keyName ? [$keyName] : [$keyName, $display];
+            $rows    = $class::query()->select($columns)->orderBy($display)->limit(1000)->get();
+
+            $options = [];
+            foreach ($rows as $row) {
+                $options[] = ['id' => $row->{$keyName}, 'label' => (string) $row->{$display}];
+            }
+
+            $out[] = [
+                'value'   => $model->getMorphClass(),
+                'label'   => $config['label'],
+                'options' => $options,
+            ];
+        }
+
+        return $out;
     }
 }

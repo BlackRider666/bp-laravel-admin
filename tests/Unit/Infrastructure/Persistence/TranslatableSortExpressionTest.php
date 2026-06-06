@@ -39,6 +39,11 @@ final class TranslatableSortExpressionTest extends TestCase
             {
                 return 'en';
             }
+
+            public function currentLocale(): string
+            {
+                return $this->defaultLocale();
+            }
         };
 
         $this->repository = new EloquentEntityRepository($localeProvider);
@@ -144,5 +149,37 @@ final class TranslatableSortExpressionTest extends TestCase
         $expr = $this->invoke('pgsql', 'my_column', 'en', 'ASC');
 
         self::assertStringStartsWith('"my_column"', $expr);
+    }
+
+    // -------------------------------------------------------------------------
+    // A17 regression — sort locale stays on defaultLocale(), NOT currentLocale()
+    // -------------------------------------------------------------------------
+
+    public function test_resolve_sort_locale_uses_default_not_runtime_current(): void
+    {
+        // Stable list ordering must not shift with the viewer's runtime locale.
+        // resolveSortLocale() must read defaultLocale() (config-stable), never the
+        // display-only currentLocale() introduced for bug #9.
+        $provider = new class implements LocaleProviderContract {
+            public function availableLocales(): array
+            {
+                return ['en', 'de'];
+            }
+
+            public function defaultLocale(): string
+            {
+                return 'en';
+            }
+
+            public function currentLocale(): string
+            {
+                return 'de';
+            }
+        };
+
+        $repository = new EloquentEntityRepository($provider);
+        $method     = new ReflectionMethod(EloquentEntityRepository::class, 'resolveSortLocale');
+
+        self::assertSame('en', (string) $method->invoke($repository));
     }
 }

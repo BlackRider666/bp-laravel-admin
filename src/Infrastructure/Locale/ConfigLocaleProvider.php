@@ -25,4 +25,11 @@ final class ConfigLocaleProvider implements LocaleProviderContract
         $locale = config('app.locale');
         return is_string($locale) && $locale !== '' ? $locale : 'en';
     }
+
+    public function currentLocale(): string
+    {
+        $locale = app()->getLocale();
+
+        return $locale !== '' ? $locale : $this->defaultLocale();
+    }
 }

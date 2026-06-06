@@ -81,4 +81,17 @@ final class ConfigLocaleProviderTest extends TestCase
 
         self::assertSame(['en'], $locales);
     }
+
+    public function test_current_locale_reflects_runtime(): void
+    {
+        app()->setLocale('de');
+        self::assertSame('de', (new ConfigLocaleProvider())->currentLocale());
+    }
+
+    public function test_current_locale_falls_back_to_default_when_runtime_empty(): void
+    {
+        config(['app.locale' => 'en']);
+        app()->setLocale('');
+        self::assertSame('en', (new ConfigLocaleProvider())->currentLocale());
+    }
 }

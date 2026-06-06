@@ -46,6 +46,7 @@ final class EntityIndexRequest extends FormRequest
             'per_page' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'q'        => ['nullable', 'string', 'max:255'],
             'filter'   => ['nullable', 'array'],
+            'filter.*' => ['nullable', 'string'],
         ];
     }
 
@@ -84,6 +85,9 @@ final class EntityIndexRequest extends FormRequest
         foreach ($input as $field => $value) {
             if (!in_array($field, $allowed, true)) {
                 continue;
+            }
+            if (is_array($value)) {
+                continue; // defensively ignore malformed array filter values
             }
             if ($value === '') {
                 continue;

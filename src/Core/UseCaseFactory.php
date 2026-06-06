@@ -52,7 +52,7 @@ final readonly class UseCaseFactory
             $this->mutator,
             $this->authorization,
             $def,
-            new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def),
+            new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def, 'create'),
             $this->dispatcher,
         );
     }
@@ -64,7 +64,7 @@ final readonly class UseCaseFactory
             $this->mutator,
             $this->authorization,
             $def,
-            new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def),
+            new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def, 'update'),
             $this->dispatcher,
         );
     }
@@ -96,6 +96,15 @@ final readonly class UseCaseFactory
             createRecord: fn(EntityDefinitionContract $def, EntityRecordContract $rec): EntityRecordContract => $this->createRecord($def)->execute($rec),
             updateRecord: fn(EntityDefinitionContract $def, EntityKey $key, EntityRecordContract $rec): EntityRecordContract => $this->updateRecord($def)->execute($key, $rec),
             resolveDefinition: fn(string $defClass): EntityDefinitionContract => $this->registry->get((new $defClass())->resolveName()),
+            validateRecord: function (EntityDefinitionContract $def, array $attrs, array $skip = []): void {
+                // LocaleAwareValidationWrapper rebuilds locale-expanded rules from $def.
+                // Throws ValidationException on failure — this converts DB 500s into 422s
+                // for hasMany/morphMany children that have required fields.
+                // $skip contains back-FK field names that the ORM auto-assigns on write;
+                // they must be excluded from child validation so the form can omit them.
+                (new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def, 'create', $skip))
+                    ->validate($attrs, []);
+            },
         );
     }
 }

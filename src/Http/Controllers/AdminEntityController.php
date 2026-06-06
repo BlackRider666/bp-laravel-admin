@@ -22,6 +22,7 @@ use BlackParadise\LaravelAdmin\Http\Presenters\EntityPresenterInterface;
 use BlackParadise\LaravelAdmin\Http\Requests\EntityBulkDestroyRequest;
 use BlackParadise\LaravelAdmin\Http\Requests\EntityIndexRequest;
 use BlackParadise\LaravelAdmin\Http\Requests\EntityWriteRequest;
+use BlackParadise\LaravelAdmin\Support\DeferredFileOperations;
 use BlackParadise\LaravelAdmin\Support\EmbeddedChildWriter;
 use BlackParadise\LaravelAdmin\Support\I18nErrorTranslator;
 use BlackParadise\LaravelAdmin\Support\OwnedDeletesCollector;
@@ -49,6 +50,7 @@ final class AdminEntityController extends AbstractAdminController
         private readonly I18nErrorTranslator $errorTranslator,
         private readonly TransactionContract $transactions,
         private readonly AuthorizationProviderContract $authorization,
+        private readonly DeferredFileOperations $deferredFiles,
     ) {
         parent::__construct($registry);
     }
@@ -99,6 +101,12 @@ final class AdminEntityController extends AbstractAdminController
         }
 
         $raw = $request->attributesForWrite();
+        $committed = false;
+
+        // Signal that the controller owns the outermost transaction boundary.
+        // The mutator will see hasOuterScope() === true and skip its own self-flush,
+        // deferring to the finally block below.
+        $this->deferredFiles->beginOuterScope();
 
         try {
             /** @var EntityRecordContract $created */
@@ -115,10 +123,14 @@ final class AdminEntityController extends AbstractAdminController
 
                 return $created;
             });
+            $committed = true;
         } catch (ValidationException $e) {
             return $this->presenter->validationError($this->errorTranslator->translate($e->errors()));
         } catch (UnauthorizedException) {
             return $this->presenter->unauthorized();
+        } finally {
+            $this->deferredFiles->endOuterScope();
+            $committed ? $this->deferredFiles->commit() : $this->deferredFiles->rollback();
         }
 
         return $this->presenter->store($created, $definition);
@@ -167,6 +179,10 @@ final class AdminEntityController extends AbstractAdminController
         $definition = $request->definition();
         $key = $this->entityKey($request);
         $raw = $request->attributesForWrite();
+        $committed = false;
+
+        // Signal that the controller owns the outermost transaction boundary.
+        $this->deferredFiles->beginOuterScope();
 
         try {
             /** @var EntityRecordContract $updated */
@@ -185,12 +201,16 @@ final class AdminEntityController extends AbstractAdminController
 
                 return $updated;
             });
+            $committed = true;
         } catch (ValidationException $e) {
             return $this->presenter->validationError($this->errorTranslator->translate($e->errors()));
         } catch (UnauthorizedException) {
             return $this->presenter->unauthorized();
         } catch (EntityNotFoundException) {
             return $this->presenter->notFound();
+        } finally {
+            $this->deferredFiles->endOuterScope();
+            $committed ? $this->deferredFiles->commit() : $this->deferredFiles->rollback();
         }
 
         return $this->presenter->update($updated, $definition, (string) $key);
@@ -200,15 +220,23 @@ final class AdminEntityController extends AbstractAdminController
     {
         $definition = $this->registry->get($this->entityName($request));
         $key = $this->entityKey($request);
+        $committed = false;
+
+        // Signal that the controller owns the outermost transaction boundary.
+        $this->deferredFiles->beginOuterScope();
 
         try {
             $this->transactions->executeInTransaction(function () use ($definition, $key): void {
                 $this->deleteHostWithOwned($definition, $key);
             });
+            $committed = true;
         } catch (UnauthorizedException) {
             return $this->presenter->unauthorized();
         } catch (EntityNotFoundException) {
             return $this->presenter->notFound();
+        } finally {
+            $this->deferredFiles->endOuterScope();
+            $committed ? $this->deferredFiles->commit() : $this->deferredFiles->rollback();
         }
 
         return $this->presenter->destroy($definition, (string) $key);
@@ -227,13 +255,16 @@ final class AdminEntityController extends AbstractAdminController
         foreach ($request->entityKeys() as $key) {
             try {
                 $this->transactions->executeInTransaction(fn() => $this->deleteHostWithOwned($definition, $key));
+                $this->deferredFiles->commit();
                 $deleted++;
             } catch (UnauthorizedException) {
                 // Partial-success policy: skip records the caller cannot delete,
                 // report them back so the UI can surface a warning.
+                $this->deferredFiles->rollback();
                 $failedIds[] = (string) $key;
             } catch (EntityNotFoundException) {
                 // Record vanished between selection and delete — treat as already done.
+                $this->deferredFiles->rollback();
                 $notFoundIds[] = (string) $key;
             }
         }
@@ -266,11 +297,7 @@ final class AdminEntityController extends AbstractAdminController
         $rowId = $request->route('id');
         $message = $action->label() . ' was dispatched.';
 
-        if ($rowId !== null) {
-            return back()->with('success', $message . ' (#' . $rowId . ')');
-        }
-
-        return back()->with('success', $message);
+        return $this->presenter->actionResult($message, $rowId !== null ? (string) $rowId : null);
     }
 
     private function entityKey(Request $request): EntityKey

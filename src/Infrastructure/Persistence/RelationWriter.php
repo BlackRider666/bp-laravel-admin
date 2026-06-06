@@ -139,6 +139,24 @@ final class RelationWriter
                     ARRAY_FILTER_USE_KEY,
                 );
             }
+            // Merge static/dynamic pivot data into each pre-shaped record entry.
+            if ($field instanceof BelongsToManyField) {
+                $static  = $field->getPivotData();
+                $dynamic = $field->getPivotPayloadCallback();
+                if ($static !== [] || $dynamic !== null) {
+                    $hostAttrs = $host->getAttributes();
+                    $merged = [];
+                    foreach ($value as $id => $pivotAttrs) {
+                        $pivot = $static;
+                        if ($dynamic !== null) {
+                            $pivot = array_merge($pivot, $dynamic($id, $hostAttrs));
+                        }
+                        // Explicit per-record attrs win over field-level defaults.
+                        $merged[$id] = array_merge($pivot, is_array($pivotAttrs) ? $pivotAttrs : []);
+                    }
+                    $value = $merged;
+                }
+            }
             $host->{$relationName}()->sync($value);
             return;
         }
@@ -152,8 +170,10 @@ final class RelationWriter
                 $ids[] = $v;
             } elseif (is_string($v) && $v !== '') {
                 $ids[] = $v;
-            } elseif (is_float($v) && !is_nan($v) && !is_infinite($v)) {
-                // Cast whole-number floats to int so type stays array<int, int|string>.
+            } elseif (is_float($v) && is_finite($v) && floor($v) === $v) {
+                // Accept only whole-number floats (e.g. JSON-decoded integers like 1.0).
+                // Non-integral floats like 1.9 are silently discarded to prevent
+                // attaching a wrong record by flooring the value.
                 $ids[] = (int) $v;
             }
             // bool, null, arrays, objects intentionally skipped.
@@ -274,16 +294,23 @@ final class RelationWriter
         RelationFieldContract $field,
         mixed $value,
     ): void {
-        if ($value === null || $value === '') {
+        $relationName = $field->relationName();
+        $relation     = $host->{$relationName}();
+
+        // Explicit empty → delete existing child (clear the relation).
+        if ($value === null || $value === '' || (is_array($value) && $value === [])) {
+            $existing = $relation->first();
+            if ($existing !== null) {
+                $existing->delete();
+            }
             return;
         }
+
         if (!is_array($value)) {
             return;
         }
 
-        $relationName = $field->relationName();
-        $relation     = $host->{$relationName}();
-        $existing     = $relation->first();
+        $existing = $relation->first();
 
         if ($existing !== null) {
             $existing->update($value);
@@ -336,6 +363,24 @@ final class RelationWriter
      *
      * @param mixed $value Array of child attribute arrays; non-arrays are skipped.
      */
+    /**
+     * Normalize child attribute arrays before writing to the database:
+     * converts empty strings to null so that NOT NULL constraints are correctly
+     * triggered even when the caller does not pass through HTTP middleware
+     * (ConvertEmptyStringsToNull). This mirrors the behaviour an HTTP request
+     * would have, and is consistent with the host mutator's own attribute filtering.
+     *
+     * @param array<string, mixed> $attrs
+     * @return array<string, mixed>
+     */
+    private function normalizeChildAttrs(array $attrs): array
+    {
+        return array_map(
+            static fn(mixed $v): mixed => (is_string($v) && $v === '') ? null : $v,
+            $attrs,
+        );
+    }
+
     private function applyChildSync(
         Model $host,
         RelationFieldContract $field,
@@ -354,7 +399,7 @@ final class RelationWriter
                 if (!is_array($childAttrs)) {
                     continue;
                 }
-                $relation->create($childAttrs);
+                $relation->create($this->normalizeChildAttrs($childAttrs));
             }
             return;
         }
@@ -367,6 +412,7 @@ final class RelationWriter
                 if (!is_array($childAttrs)) {
                     continue;
                 }
+                $childAttrs = $this->normalizeChildAttrs($childAttrs);
                 $id = $childAttrs['id'] ?? null;
                 if ($id !== null && $existing->has($id)) {
                     $existing[$id]->update($childAttrs);
@@ -399,7 +445,7 @@ final class RelationWriter
             if (!is_array($childAttrs)) {
                 continue;
             }
-            $relation->create($childAttrs);
+            $relation->create($this->normalizeChildAttrs($childAttrs));
         }
     }
 

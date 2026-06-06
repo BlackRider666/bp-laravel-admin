@@ -15,7 +15,7 @@ final class JsonEntityPresenter implements EntityPresenterInterface
     public function index(PaginatedResult $paginated, array $fields, EntityDefinitionContract $definition): Response
     {
         return response()->json([
-            'data' => array_map(fn(EntityRecordContract $record): array => $record->toArray(), $paginated->items),
+            'data' => array_map(fn(EntityRecordContract $record): array => $this->project($record, $fields), $paginated->items),
         ]);
     }
 
@@ -35,7 +35,7 @@ final class JsonEntityPresenter implements EntityPresenterInterface
 
     public function show(EntityRecordContract $record, array $fields, EntityDefinitionContract $definition): Response
     {
-        return response()->json(['data' => $record->toArray()]);
+        return response()->json(['data' => $this->project($record, $fields)]);
     }
 
     public function edit(EntityRecordContract $record, array $fields, EntityDefinitionContract $definition): Response
@@ -43,9 +43,23 @@ final class JsonEntityPresenter implements EntityPresenterInterface
         return response()->json([
             'entity' => $definition->name(),
             'action' => 'edit',
-            'data'   => $record->toArray(),
+            'data'   => $this->project($record, $fields),
             'fields' => array_map(fn($f): array => ['name' => $f->name(), 'type' => $f->type()], $fields),
         ]);
+    }
+
+    /**
+     * Project the record through the field list — only expose columns whose name
+     * matches a FieldContract declared in $fields. Prevents leaking hidden/hashed
+     * columns that are not part of the visible field set.
+     *
+     * @param array<mixed> $fields
+     * @return array<string, mixed>
+     */
+    private function project(EntityRecordContract $record, array $fields): array
+    {
+        $names = array_map(static fn(mixed $f): string => $f->name(), $fields);
+        return array_intersect_key($record->toArray(), array_flip($names));
     }
 
     public function update(EntityRecordContract $updated, EntityDefinitionContract $definition, string $id): Response
@@ -85,5 +99,10 @@ final class JsonEntityPresenter implements EntityPresenterInterface
     public function validationError(array $errors): Response
     {
         return response()->json(['message' => 'Validation failed.', 'errors' => $errors], 422);
+    }
+
+    public function actionResult(string $message, ?string $rowId = null): Response
+    {
+        return response()->json(['message' => $message, 'id' => $rowId]);
     }
 }

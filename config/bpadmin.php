@@ -68,6 +68,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Allowed download disks
+    |--------------------------------------------------------------------------
+    |
+    | Whitelist of filesystem disks SafeFileDownloadController may serve signed
+    | downloads from. Extend when adding non-public disks for downloads.
+    |
+    */
+    'allowed_download_disks' => ['public'],
+
+    /*
+    |--------------------------------------------------------------------------
     | Pagination
     |--------------------------------------------------------------------------
     |
