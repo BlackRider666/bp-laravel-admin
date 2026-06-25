@@ -106,7 +106,7 @@ final class InstallCommand extends Command
         {
             public string \$model = {$modelFqcn}::class;
 
-            public function fields(): array
+            protected function defineFields(): array
             {
                 return [
                     // TODO: define fields for {$className}

@@ -11,6 +11,7 @@ use BlackParadise\CoreAdmin\Domain\Contracts\Files\FileStorageProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\TransactionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\ValueHasherContract;
 use BlackParadise\CoreAdmin\Domain\Entity\EntityRecord;
+use BlackParadise\CoreAdmin\Domain\Exceptions\EntityNotFoundException;
 use BlackParadise\CoreAdmin\Domain\Exceptions\ValidationException;
 use BlackParadise\CoreAdmin\Domain\Fields\FileField;
 use BlackParadise\CoreAdmin\Domain\Fields\ImageField;
@@ -119,8 +120,12 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
         /** @var Model $instance */
         $instance = resolve($definition->modelClass());
 
-        /** @var Model $existing */
-        $existing = $instance->newQuery()->findOrFail($key->value);
+        /** @var Model|null $existing */
+        $existing = $instance->newQuery()->find($key->value);
+
+        if ($existing === null) {
+            throw new EntityNotFoundException($definition->name(), $key->value);
+        }
 
         $oldFilePaths       = $this->getExistingFilePaths($definition, $existing);
         $filteredAttributes = $this->filterAttributes($definition, $rawAttributes);
@@ -204,11 +209,10 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
         });
 
         if ($deleted) {
-            $usesSoftDeletes = in_array(
-                SoftDeletes::class,
-                class_uses_recursive($existing),
-                true,
-            );
+            /** @var array<class-string, bool> $softDeleteTraitCache */
+            static $softDeleteTraitCache = [];
+            $usesSoftDeletes = $softDeleteTraitCache[$existing::class]
+                ??= in_array(SoftDeletes::class, class_uses_recursive($existing), true);
             $isSoftDelete = $usesSoftDeletes
                 && method_exists($existing, 'isForceDeleting')
                 && !$existing->isForceDeleting();

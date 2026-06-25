@@ -68,6 +68,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -107,7 +108,7 @@ final class DashboardServiceProvider extends ServiceProvider
         $this->app->bind(AuthorizationProviderContract::class, LaravelAuthorizationProvider::class);
         $this->app->bind(EntityRepositoryInterface::class, EloquentEntityRepository::class);
         $this->app->bind(TransactionContract::class, LaravelTransaction::class);
-        $this->app->singleton(RelationOptionsProviderContract::class, EloquentRelationOptionsProvider::class);
+        $this->app->scoped(RelationOptionsProviderContract::class, EloquentRelationOptionsProvider::class);
 
         // EloquentEntityMutator collaborators — singletons since both are stateless.
         // Container auto-resolves them into the mutator's constructor.
@@ -252,6 +253,14 @@ final class DashboardServiceProvider extends ServiceProvider
                 $registry->register($this->app->make($class));
             }
             return;
+        }
+
+        if (!$this->app->environment(['local', 'testing'])) {
+            Log::warning(
+                'BPAdmin: entity manifest missing — every request scans the filesystem. '
+                . 'Run "php artisan bpadmin:cache" during deploy (analogous to route:cache).',
+                ['manifest' => $manifestPath],
+            );
         }
 
         $paths = $this->app['config']->get('bpadmin.discovery_paths', [app_path('BPAdmin')]);

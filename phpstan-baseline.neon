@@ -2688,4 +2688,154 @@ parameters:
 			count: 1
 			path: tests/Integration/Persistence/SoftDeleteFileLifecycleTest.php
 
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertCount\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 3
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertNotSame\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 3
+			path: tests/Integration/RelationOptionsCacheTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Anonymous function should return BlackParadise\\CoreAdmin\\Domain\\Contracts\\Auth\\AuthorizationProviderContract&Mockery\\MockInterface but returns Mockery\\MockInterface\.$#'
+			identifier: return.type
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage\:\:andReturn\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 4
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertCount\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertNotEmpty\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 2
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertStringContainsString\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 1
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\Assert\:\:assertStringNotContainsStringIgnoringCase\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 2
+			path: tests/Integration/ListColumnProjectionTest.php
+
+		-
+			message: '#^Call to an undefined static method Illuminate\\Support\\Facades\\Log\:\:shouldHaveReceived\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: tests/Integration/ProductionManifestWarningTest.php
+
+		-
+			message: '#^Call to an undefined static method Illuminate\\Support\\Facades\\Log\:\:shouldNotHaveReceived\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: tests/Integration/ProductionManifestWarningTest.php
+
 

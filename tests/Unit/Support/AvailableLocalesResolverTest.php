@@ -44,4 +44,28 @@ final class AvailableLocalesResolverTest extends TestCase
         $resolver = new AvailableLocalesResolver([], '/nonexistent-' . uniqid());
         self::assertSame(['en'], $resolver->list());
     }
+
+    public function test_scans_filesystem_only_once(): void
+    {
+        $dir = sys_get_temp_dir() . '/bpadmin_resolver_memo_' . uniqid();
+        @mkdir($dir . '/fr', 0777, true);
+
+        try {
+            $resolver = new AvailableLocalesResolver(null, $dir);
+
+            $first = $resolver->list();
+            self::assertSame(['fr'], $first);
+
+            // Add a second locale directory AFTER the first call.
+            @mkdir($dir . '/es', 0777, true);
+
+            // Second call must return the cached result — NOT ['es', 'fr'].
+            $second = $resolver->list();
+            self::assertSame($first, $second, 'list() must return cached result; filesystem must not be re-scanned');
+        } finally {
+            @rmdir($dir . '/fr');
+            @rmdir($dir . '/es');
+            @rmdir($dir);
+        }
+    }
 }

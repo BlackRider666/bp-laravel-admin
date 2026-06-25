@@ -17,10 +17,16 @@ use Illuminate\Database\Eloquent\Model;
  * {@see Model::getKeyName()} so non-`id` keys (UUID, slug, composite) work
  * without configuration.
  *
- * Stateless — safe to bind as a singleton.
+ * Caches results per instance; bound as request-scoped.
  */
-final readonly class EloquentRelationOptionsProvider implements RelationOptionsProviderContract
+final class EloquentRelationOptionsProvider implements RelationOptionsProviderContract
 {
+    /** @var array<string, list<array{id: int|string, label: string}>> */
+    private array $optionsCache = [];
+
+    /** @var array<string, list<array{value: string, label: string, options: list<array{id: int|string, label: string}>}>> */
+    private array $morphCache = [];
+
     public function options(RelationFieldContract $field, int $limit = 1000): array
     {
         $targetClass = $field->target();
@@ -33,9 +39,15 @@ final readonly class EloquentRelationOptionsProvider implements RelationOptionsP
 
         $model = new $targetClass();
 
-        $keyName       = $model->getKeyName();
-        $displayField  = $field->displayField();
+        $keyName        = $model->getKeyName();
+        $displayField   = $field->displayField();
         $effectiveLimit = max(1, $limit);
+        $constraints    = $field->optionConstraints();
+
+        $cacheKey = $targetClass . '|' . $displayField . '|' . $effectiveLimit . '|' . serialize($constraints);
+        if (isset($this->optionsCache[$cacheKey])) {
+            return $this->optionsCache[$cacheKey];
+        }
 
         // Deduplicate columns when displayField === keyName to avoid a
         // "duplicate column" error on databases that disallow it.
@@ -48,7 +60,6 @@ final readonly class EloquentRelationOptionsProvider implements RelationOptionsP
             ->orderBy($displayField)
             ->limit($effectiveLimit);
 
-        $constraints = $field->optionConstraints();
         foreach ($constraints as $constraint) {
             $query->where($constraint['column'], $constraint['value']);
         }
@@ -63,7 +74,7 @@ final readonly class EloquentRelationOptionsProvider implements RelationOptionsP
             ];
         }
 
-        return $options;
+        return $this->optionsCache[$cacheKey] = $options;
     }
 
     /**
@@ -81,6 +92,18 @@ final readonly class EloquentRelationOptionsProvider implements RelationOptionsP
             return [];
         }
 
+        $cacheKey = serialize($field->morphTypeMap());
+
+        return $this->morphCache[$cacheKey] ??= $this->buildMorphOptions($field);
+    }
+
+    /**
+     * Build the per-type options list for a MorphToField without caching.
+     *
+     * @return list<array{value: string, label: string, options: list<array{id: int|string, label: string}>}>
+     */
+    private function buildMorphOptions(MorphToField $field): array
+    {
         $out = [];
         foreach ($field->morphTypeMap() as $class => $config) {
             if (!class_exists($class)) {

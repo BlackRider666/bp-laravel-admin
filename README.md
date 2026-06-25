@@ -69,6 +69,26 @@ class Users extends EntityDefinition
 
 `DashboardServiceProvider` auto-discovers all `EntityDefinition` subclasses in `app/BPAdmin/` at boot.
 
+## Production Deployment
+
+During a production deploy, cache entity definitions alongside Laravel's own caches:
+
+```bash
+php artisan config:cache
+php artisan route:cache
+php artisan bpadmin:cache   # pre-builds entity manifest → bootstrap/cache/bpadmin-entities.php
+```
+
+Without `bpadmin:cache`, every request walks the filesystem to discover entity classes.
+This is fine locally, but in production it adds measurable overhead and triggers a boot-time
+log warning to remind you to run the cache command.
+
+To clear the entity manifest (e.g. during rollback or after removing an entity):
+
+```bash
+php artisan bpadmin:cache --clear
+```
+
 ## License
 
 MIT

@@ -12,11 +12,23 @@ namespace BlackParadise\LaravelAdmin\Support;
  *   2. Scan $langDir for subdirectories.
  *   3. Fallback ['en'] — package's bundled baseline.
  */
-final readonly class AvailableLocalesResolver
+final class AvailableLocalesResolver
 {
+    /**
+     * Memoized result of list().
+     *
+     * null means "not yet resolved". Empty-array is never a valid resolved
+     * value (list() always falls back to ['en']), so null-sentinel is safe.
+     * NOTE: if future logic ever legitimately returns [] here, switch to a
+     * bool $resolved flag instead of relying on null-as-unset.
+     *
+     * @var string[]|null
+     */
+    private ?array $cache = null;
+
     public function __construct(
-        private mixed $configured,
-        private string $langDir,
+        private readonly mixed $configured,
+        private readonly string $langDir,
     ) {}
 
     /**
@@ -24,12 +36,16 @@ final readonly class AvailableLocalesResolver
      */
     public function list(): array
     {
+        if ($this->cache !== null) {
+            return $this->cache;
+        }
+
         if (is_array($this->configured) && $this->configured !== []) {
-            return array_values($this->configured);
+            return $this->cache = array_values($this->configured);
         }
 
         if (!is_dir($this->langDir)) {
-            return ['en'];
+            return $this->cache = ['en'];
         }
 
         $locales = [];
@@ -46,6 +62,6 @@ final readonly class AvailableLocalesResolver
             }
         }
 
-        return $locales === [] ? ['en'] : $locales;
+        return $this->cache = ($locales === [] ? ['en'] : $locales);
     }
 }

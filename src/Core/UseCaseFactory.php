@@ -60,7 +60,6 @@ final readonly class UseCaseFactory
     public function updateRecord(EntityDefinitionContract $def): UpdateRecordUseCase
     {
         return new UpdateRecordUseCase(
-            $this->repository,
             $this->mutator,
             $this->authorization,
             $def,

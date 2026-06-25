@@ -42,6 +42,37 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
      */
     private const ALLOWED_OPERATORS = ['=', '!=', '<', '>', '<=', '>=', 'like', 'in', 'not in'];
 
+    /**
+     * Field types that are not backed by a column on the host table.
+     * These are skipped when building the SELECT projection for list queries.
+     *
+     * - has_many  : child-table relation, no FK on this table
+     * - morph_many: polymorphic one-to-many, no column on host
+     * - belongs_to_many: pivot-table relation
+     * - has_one   : child-table relation (FK is on the child)
+     *
+     * Note: belongs_to IS backed by a FK column (name() returns the FK, e.g. city_id)
+     * and must NOT appear here — it must be projected so eager-loading can work.
+     *
+     * @var array<string>
+     */
+    private const NON_COLUMN_TYPES = ['has_many', 'morph_many', 'belongs_to_many', 'has_one'];
+
+    /**
+     * Field types whose backing columns cannot be reliably derived from the field name.
+     * When any such type appears in the definition, fall back to SELECT *.
+     *
+     * - morph_to     : requires two columns (name_id + name_type) that can't be inferred
+     * - morph_file   : uses a named morph relation, not a simple column name
+     * - relation_path: the value is read from an eager-loaded relation, and the FK that
+     *                  drives that eager-load lives on the host model but may not appear
+     *                  as any FieldContract in the definition — projecting without it
+     *                  would silently break the relation load
+     *
+     * @var array<string>
+     */
+    private const PROJECTION_UNSAFE_TYPES = ['morph_to', 'morph_file', 'relation_path'];
+
     public function __construct(
         private LocaleProviderContract $localeProvider,
     ) {}
@@ -60,8 +91,19 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
             $query->with($eagerLoad);
         }
 
+        // Build field allowlists once; reused by validateField / validateSortableField.
+        $fields         = $entityDefinition->fields();
+        $allowedFields  = [];
+        $sortableFields = [];
+        foreach ($fields as $field) {
+            $allowedFields[$field->name()] = true;
+            if ($field->isSortable()) {
+                $sortableFields[$field->name()] = true;
+            }
+        }
+
         foreach ($criteria->filters as $filter) {
-            $this->applyFilter($query, $filter, $entityDefinition);
+            $this->applyFilter($query, $filter, $allowedFields);
         }
 
         // Full-text OR-search across searchFields.
@@ -76,9 +118,9 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
                     $criteria->search,
                 );
                 $needle = '%' . $escaped . '%';
-                $query->where(function ($q) use ($needle, $searchFields, $entityDefinition): void {
+                $query->where(function ($q) use ($needle, $searchFields, $allowedFields): void {
                     foreach ($searchFields as $fieldName) {
-                        $this->validateField($entityDefinition, $fieldName);
+                        $this->validateField($allowedFields, $fieldName);
                         $q->orWhere($fieldName, 'like', $needle);
                     }
                 });
@@ -86,13 +128,13 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
         }
 
         foreach ($criteria->sort as $sort) {
-            $this->applySort($query, $sort, $entityDefinition);
+            $this->applySort($query, $sort, $sortableFields, $entityDefinition);
         }
 
         $page    = max(1, $criteria->page);
         $perPage = max(1, $criteria->perPage);
 
-        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+        $paginator = $query->paginate($perPage, $this->listColumns($entityDefinition), 'page', $page);
 
         /** @var array<Model> $models */
         $models = $paginator->items();
@@ -144,18 +186,52 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
     }
 
     /**
+     * Column list for list-page SELECT: primary key + every column-backed field.
+     *
+     * Skips relation types that have no column on the host table (NON_COLUMN_TYPES).
+     * Falls back to ['*'] when any field type whose backing columns cannot be derived
+     * from the field name alone is present (PROJECTION_UNSAFE_TYPES). This includes
+     * relation_path fields — their FK column may not appear as a FieldContract in the
+     * definition, so projecting without it would silently break eager-loading; falling
+     * back to * ensures all required columns are always selected.
+     *
+     * @return array<string>
+     */
+    private function listColumns(EntityDefinitionContract $definition): array
+    {
+        $columns = [$definition->keyField()];
+
+        foreach ($definition->fields() as $field) {
+            $type = $field->type();
+
+            if (in_array($type, self::PROJECTION_UNSAFE_TYPES, true)) {
+                return ['*'];
+            }
+
+            if (in_array($type, self::NON_COLUMN_TYPES, true)) {
+                continue;
+            }
+
+            $columns[] = $field->name();
+        }
+
+        return array_values(array_unique($columns));
+    }
+
+    /**
      * Apply a single {@see Filter} to the query builder after validating
      * the field name and operator against their respective allowlists.
      *
      * @param Builder<Model> $query
+     * @param array<string, true> $allowedFields prebuilt hash-set from list()
      * @throws InvalidArgumentException on disallowed field or operator.
      */
     private function applyFilter(
         Builder $query,
         Filter $filter,
-        EntityDefinitionContract $definition,
+        array $allowedFields,
     ): void {
-        $this->validateField($definition, $filter->field);
+        $this->validateField($allowedFields, $filter->field);
         $this->validateOperator($filter->operator);
 
         $operator = strtolower($filter->operator);
@@ -214,14 +290,16 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
      * originates from application config, never from HTTP input.
      *
      * @param Builder<Model> $query
+     * @param array<string, true> $sortableFields prebuilt hash-set from list()
      * @throws InvalidArgumentException on disallowed field or direction.
      */
     private function applySort(
         Builder $query,
         Sort $sort,
+        array $sortableFields,
         EntityDefinitionContract $definition,
     ): void {
-        $this->validateSortableField($definition, $sort->field);
+        $this->validateSortableField($sortableFields, $sort->field);
         $this->validateSortDirection($sort->direction);
 
         // Detect if the sort field maps to a TranslatableField.
@@ -331,15 +409,14 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
     }
 
     /**
-     * Assert that the given field name is declared in the entity definition.
+     * Assert that the given field name is present in the prebuilt allowlist.
      *
-     * @throws InvalidArgumentException when the field is not in the definition.
+     * @param array<string, true> $allowed hash-set built once in list()
+     * @throws InvalidArgumentException when the field is not in the allowlist.
      */
-    private function validateField(EntityDefinitionContract $definition, string $field): void
+    private function validateField(array $allowed, string $field): void
     {
-        $fields = array_map(fn(FieldContract $f): string => $f->name(), $definition->fields());
-
-        if (!in_array($field, $fields, true)) {
+        if (!isset($allowed[$field])) {
             throw new InvalidArgumentException(
                 "Field '{$field}' is not allowed for filtering.",
             );
@@ -347,18 +424,14 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
     }
 
     /**
-     * Assert that the given field name is declared as sortable in the entity definition.
+     * Assert that the given field name is present in the prebuilt sortable allowlist.
      *
+     * @param array<string, true> $allowed hash-set built once in list()
      * @throws InvalidArgumentException when the field is not sortable.
      */
-    private function validateSortableField(EntityDefinitionContract $definition, string $field): void
+    private function validateSortableField(array $allowed, string $field): void
     {
-        $sortableFields = array_map(
-            fn(FieldContract $f): string => $f->name(),
-            array_filter($definition->fields(), fn(FieldContract $f): bool => $f->isSortable()),
-        );
-
-        if (!in_array($field, $sortableFields, true)) {
+        if (!isset($allowed[$field])) {
             throw new InvalidArgumentException(
                 "Field '{$field}' is not allowed for sorting.",
             );

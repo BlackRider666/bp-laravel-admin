@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace BlackParadise\LaravelAdmin\Tests\Integration\Infrastructure;
 
 use BlackParadise\CoreAdmin\Domain\Entity\EntityRecord;
+use BlackParadise\CoreAdmin\Domain\Exceptions\EntityNotFoundException;
 use BlackParadise\CoreAdmin\Domain\Mutators\EntityMutatorInterface;
 use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityKey;
 use BlackParadise\LaravelAdmin\Tests\Integration\Concerns\CreatesTestItemTable;
 use BlackParadise\LaravelAdmin\Tests\Integration\Fixtures\TestItem;
 use BlackParadise\LaravelAdmin\Tests\Integration\Fixtures\TestItemDefinition;
 use BlackParadise\LaravelAdmin\Tests\TestCase;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
@@ -125,12 +125,12 @@ final class EloquentEntityMutatorTest extends TestCase
         $this->assertSame('grace-updated@example.com', $updated->get('email'));
     }
 
-    public function test_update_throws_when_record_not_found(): void
+    public function test_update_throws_entity_not_found_when_record_missing(): void
     {
         $key    = new EntityKey(99999, 'int');
         $record = new EntityRecord($this->definition, ['name' => 'Ghost', 'email' => 'ghost@example.com']);
 
-        $this->expectException(ModelNotFoundException::class);
+        $this->expectException(EntityNotFoundException::class);
 
         $this->mutator->update($key, $record);
     }

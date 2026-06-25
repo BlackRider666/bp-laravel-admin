@@ -8,6 +8,7 @@ use BlackParadise\CoreAdmin\Domain\Contracts\Action\ActionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
 use Illuminate\Support\Str;
+use LogicException;
 
 /**
  * Abstract base class for all BPAdmin entity definitions.
@@ -18,7 +19,7 @@ use Illuminate\Support\Str;
  * The entity name is automatically derived from the class name using snake_case:
  * Users → users, OrderItems → order_items.
  *
- * Implement {@see fields()} to return the list of field definitions for this entity.
+ * Implement {@see defineFields()} to return the list of field definitions for this entity.
  */
 abstract class EntityDefinition implements EntityDefinitionContract
 {
@@ -52,6 +53,13 @@ abstract class EntityDefinition implements EntityDefinitionContract
      */
     public bool $creatable = true;
 
+    /** @var array<FieldContract>|null */
+    private ?array $cachedFields = null;
+
+    private ?string $resolvedNameCache = null;
+
+    private ?string $labelCache = null;
+
     /**
      * Derive the entity name from the class name.
      * Users → users, OrderItems → order_items.
@@ -61,8 +69,15 @@ abstract class EntityDefinition implements EntityDefinitionContract
      */
     public function resolveName(): string
     {
-        $class = substr(static::class, (int) strrpos(static::class, '\\') + 1);
-        return strtolower((string) preg_replace('/[A-Z]/', '_$0', lcfirst($class)));
+        if ($this->resolvedNameCache !== null) {
+            return $this->resolvedNameCache;
+        }
+        $pos   = strrpos(static::class, '\\');
+        $class = $pos !== false ? substr(static::class, $pos + 1) : static::class;
+
+        return $this->resolvedNameCache = strtolower(
+            (string) preg_replace('/[A-Z]/', '_$0', lcfirst($class)),
+        );
     }
 
     /**
@@ -83,7 +98,7 @@ abstract class EntityDefinition implements EntityDefinitionContract
      */
     public function label(): string
     {
-        return Str::headline($this->resolveName());
+        return $this->labelCache ??= Str::headline($this->resolveName());
     }
 
     /**
@@ -151,11 +166,35 @@ abstract class EntityDefinition implements EntityDefinitionContract
     }
 
     /**
-     * Return the field definitions for this entity.
+     * Memoized field definitions for this entity.
+     *
+     * Concrete definitions implement {@see defineFields()}; the result is
+     * built once per instance (definitions are registry singletons, so this
+     * is effectively once per request). Legacy definitions may still override
+     * fields() directly — they simply opt out of memoization.
      *
      * @return array<FieldContract>
      */
-    abstract public function fields(): array;
+    public function fields(): array
+    {
+        return $this->cachedFields ??= $this->defineFields();
+    }
+
+    /**
+     * Build the field definitions for this entity.
+     *
+     * Override this method in concrete definitions to declare fields.
+     * Legacy definitions that override {@see fields()} directly continue
+     * to work unchanged — they simply opt out of memoization.
+     *
+     * @return array<FieldContract>
+     */
+    protected function defineFields(): array
+    {
+        throw new LogicException(
+            static::class . ' must implement defineFields() (or override fields()).',
+        );
+    }
 
     /**
      * Return custom action definitions for this entity.

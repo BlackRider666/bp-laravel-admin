@@ -36,10 +36,15 @@ final readonly class EmbeddedChildWriter
             return;
         }
 
+        // Build a stub host model with the known PK instead of re-fetching from
+        // the database. Eloquent only needs the primary-key value to populate the
+        // FK on the child when writing through the relation; a full SELECT is
+        // wasteful because the host record was just created / updated by the caller.
         /** @var Model $hostModel */
         $hostModel = resolve($hostDefinition->modelClass())
-            ->newQuery()
-            ->findOrFail($host->id());
+            ->newInstance()
+            ->forceFill([$hostDefinition->keyField() => $host->id()]);
+        $hostModel->exists = true;
 
         foreach ($defer as $info) {
             $field = $info['field'];
