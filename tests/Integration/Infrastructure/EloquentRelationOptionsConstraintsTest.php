@@ -11,6 +11,7 @@ use BlackParadise\LaravelAdmin\Tests\Integration\Concerns\CreatesRelationFixture
 use BlackParadise\LaravelAdmin\Tests\Integration\Concerns\CreatesTestItemTable;
 use BlackParadise\LaravelAdmin\Tests\Integration\Fixtures\TestTag;
 use BlackParadise\LaravelAdmin\Tests\TestCase;
+use Closure;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -216,6 +217,33 @@ final class EloquentRelationOptionsConstraintsTest extends TestCase
             public function state(): array
             {
                 return [];
+            }
+
+            public function hasDisplayCallback(): bool
+            {
+                return false;
+            }
+
+            public function displayCallback(): ?Closure
+            {
+                return null;
+            }
+
+            /** @return list<string> */
+            public function displayEagerLoad(): array
+            {
+                return [];
+            }
+
+            public function displayOrderColumn(): ?string
+            {
+                return null;
+            }
+
+            public function resolveDisplayLabel(array $row, string $fallbackField): string
+            {
+                $value = $row[$fallbackField] ?? '';
+                return is_scalar($value) ? (string) $value : '';
             }
         };
     }

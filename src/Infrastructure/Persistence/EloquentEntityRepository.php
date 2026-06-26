@@ -476,7 +476,7 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
 
     /**
      * Collect Eloquent relation names for eager-loading:
-     *   - RelationFieldContract → relationName()
+     *   - RelationFieldContract → relationName() + nested paths for embedded/displayEagerLoad
      *   - RelationPathField → relationPrefix() (supports nested dot-paths for Laravel)
      *   - MorphFileField → getMorphName() (morph relation stored on host model)
      *
@@ -489,7 +489,11 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
         $relations = [];
         foreach ($definition->fields() as $field) {
             if ($field instanceof RelationFieldContract) {
-                $relations[$field->relationName()] = true;
+                $relationName             = $field->relationName();
+                $relations[$relationName] = true;
+                foreach ($this->nestedRelationPaths($field) as $path) {
+                    $relations[$relationName . '.' . $path] = true;
+                }
                 continue;
             }
             if ($field instanceof RelationPathField) {
@@ -506,19 +510,88 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
     }
 
     /**
+     * Nested (one level) relation paths under $field:
+     *   - embedded → every RelationFieldContract in the embedded definition
+     *   - displayEagerLoad() → declared relations for the computed display label
+     *
+     * @return list<string>
+     */
+    private function nestedRelationPaths(RelationFieldContract $field): array
+    {
+        $paths = [];
+
+        if ($field->isEmbedded()) {
+            $embeddedClass = $field->embeddedDefinition();
+            if ($embeddedClass !== null && class_exists($embeddedClass)) {
+                /** @var EntityDefinitionContract $embeddedDef */
+                $embeddedDef = new $embeddedClass();
+                foreach ($embeddedDef->fields() as $sub) {
+                    if ($sub instanceof RelationFieldContract) {
+                        $paths[$sub->relationName()] = true;
+                    }
+                }
+            }
+        }
+
+        foreach ($field->displayEagerLoad() as $rel) {
+            $paths[$rel] = true;
+        }
+
+        return array_keys($paths);
+    }
+
+    /**
+     * Relation names whose serialization must include their own sub-relations
+     * (one level): embedded relations + relations with displayEagerLoad.
+     *
+     * @return array<string, true>
+     */
+    private function deepSerializeRelationNames(EntityDefinitionContract $definition): array
+    {
+        $names = [];
+        foreach ($definition->fields() as $field) {
+            if (!$field instanceof RelationFieldContract) {
+                continue;
+            }
+            if ($field->isEmbedded() || $field->displayEagerLoad() !== []) {
+                $names[$field->relationName()] = true;
+            }
+        }
+        return $names;
+    }
+
+    /**
      * Wrap an Eloquent model in an {@see EntityRecord} domain object.
      *
      * Eloquent relation objects are serialized to plain arrays so that
      * domain records never carry Eloquent model references.
+     *
+     * For deep relations (embedded or with displayEagerLoad), sub-relations are
+     * included in the serialized output under their relation name keys.
+     * For all other relations the original flat serialization is preserved.
      */
     private function toEntityRecord(EntityDefinitionContract $definition, Model $model): EntityRecord
     {
+        $deepKeys = $this->deepSerializeRelationNames($definition);
+
         $serializedRelations = collect($model->getRelations())
-            ->map(fn(mixed $rel) => $rel === null
-                ? null
-                : ($rel instanceof Model
-                    ? $rel->attributesToArray()
-                    : (method_exists($rel, 'toArray') ? $rel->toArray() : [])))
+            ->map(function (mixed $rel, string $key) use ($deepKeys): mixed {
+                if ($rel === null) {
+                    return null;
+                }
+                $deep = isset($deepKeys[$key]);
+                if ($rel instanceof Model) {
+                    return $deep ? $this->serializeModelDeep($rel) : $rel->attributesToArray();
+                }
+                if ($deep && is_iterable($rel)) {
+                    $out = [];
+                    foreach ($rel as $item) {
+                        $out[] = $item instanceof Model ? $this->serializeModelDeep($item) : $item;
+                    }
+                    return $out;
+                }
+                return method_exists($rel, 'toArray') ? $rel->toArray() : [];
+            })
             ->all();
 
         return new EntityRecord(
@@ -526,5 +599,36 @@ final readonly class EloquentEntityRepository implements EntityRepositoryInterfa
             attributes: $model->attributesToArray(),
             relations: $serializedRelations,
         );
+    }
+
+    /**
+     * Serialize a model's attributes plus its loaded relations (one level) as a
+     * plain array, where sub-relations are nested under their relation name keys.
+     *
+     * @return array<string, mixed>
+     */
+    private function serializeModelDeep(Model $model): array
+    {
+        $data = $model->attributesToArray();
+        foreach ($model->getRelations() as $name => $rel) {
+            if ($rel === null) {
+                $data[$name] = null;
+                continue;
+            }
+            if ($rel instanceof Model) {
+                $data[$name] = $rel->attributesToArray();
+                continue;
+            }
+            if (is_iterable($rel)) {
+                $items = [];
+                foreach ($rel as $item) {
+                    $items[] = $item instanceof Model ? $item->attributesToArray() : $item;
+                }
+                $data[$name] = $items;
+                continue;
+            }
+            $data[$name] = method_exists($rel, 'toArray') ? $rel->toArray() : null;
+        }
+        return $data;
     }
 }

@@ -37,16 +37,47 @@ final class EloquentRelationOptionsProvider implements RelationOptionsProviderCo
             return [];
         }
 
-        $model = new $targetClass();
-
+        $model          = new $targetClass();
         $keyName        = $model->getKeyName();
         $displayField   = $field->displayField();
         $effectiveLimit = max(1, $limit);
         $constraints    = $field->optionConstraints();
+        $hasCallback    = $field->hasDisplayCallback();
 
-        $cacheKey = $targetClass . '|' . $displayField . '|' . $effectiveLimit . '|' . serialize($constraints);
+        $cacheKey = $targetClass . '|' . $displayField . '|' . $effectiveLimit . '|'
+            . serialize($constraints)
+            . '|' . ($hasCallback ? 'cb:' . spl_object_hash($field) : 'col');
         if (isset($this->optionsCache[$cacheKey])) {
             return $this->optionsCache[$cacheKey];
+        }
+
+        if ($hasCallback) {
+            $query = $model::query();
+            $eager = $field->displayEagerLoad();
+            if ($eager !== []) {
+                $query->with($eager);
+            }
+            $orderColumn = $field->displayOrderColumn();
+            if ($orderColumn !== null) {
+                $query->orderBy($orderColumn);
+            }
+            $query->limit($effectiveLimit);
+            foreach ($constraints as $constraint) {
+                $query->where($constraint['column'], $constraint['value']);
+            }
+
+            $options = [];
+            foreach ($query->get() as $row) {
+                $options[] = [
+                    'id'    => $row->{$keyName},
+                    'label' => $field->resolveDisplayLabel($row->toArray(), $displayField),
+                ];
+            }
+            if ($orderColumn === null) {
+                usort($options, static fn(array $a, array $b): int => strcmp($a['label'], $b['label']));
+            }
+
+            return $this->optionsCache[$cacheKey] = $options;
         }
 
         // Deduplicate columns when displayField === keyName to avoid a
