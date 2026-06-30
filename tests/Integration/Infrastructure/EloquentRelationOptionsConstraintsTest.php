@@ -6,6 +6,8 @@ namespace BlackParadise\LaravelAdmin\Tests\Integration\Infrastructure;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\RelationOptionsProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\RelationFieldContract;
+use BlackParadise\CoreAdmin\Domain\Fields\EmbedStrategy;
+use BlackParadise\CoreAdmin\Domain\Fields\RelationKind;
 use BlackParadise\CoreAdmin\Domain\Validation\RuleSet;
 use BlackParadise\LaravelAdmin\Tests\Integration\Concerns\CreatesRelationFixtures;
 use BlackParadise\LaravelAdmin\Tests\Integration\Concerns\CreatesTestItemTable;
@@ -243,7 +245,42 @@ final class EloquentRelationOptionsConstraintsTest extends TestCase
             public function resolveDisplayLabel(array $row, string $fallbackField): string
             {
                 $value = $row[$fallbackField] ?? '';
+
                 return is_scalar($value) ? (string) $value : '';
+            }
+
+            public function kind(): RelationKind
+            {
+                return RelationKind::BelongsTo;
+            }
+
+            public function isRelation(): bool
+            {
+                return true;
+            }
+
+            public function isSideEffect(): bool
+            {
+                return false;
+            }
+
+            public function embedStrategy(): EmbedStrategy
+            {
+                return EmbedStrategy::None;
+            }
+
+            public function pointsBackTo(string $hostModelClass): bool
+            {
+                return false;
+            }
+
+            /**
+             * @param array<string> $locales
+             * @return array<string, list<string>>
+             */
+            public function expandRules(array $locales, string $context): array
+            {
+                return [$this->name() => array_values($this->ruleSet()->toArray())];
             }
         };
     }

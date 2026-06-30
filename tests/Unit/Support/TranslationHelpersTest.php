@@ -6,6 +6,7 @@ namespace BlackParadise\LaravelAdmin\Tests\Unit\Support;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
+use BlackParadise\CoreAdmin\Domain\Fields\EmbedStrategy;
 use BlackParadise\CoreAdmin\Domain\Validation\RuleSet;
 use BlackParadise\LaravelAdmin\Tests\TestCase;
 use Illuminate\Support\Facades\Lang;
@@ -84,41 +85,80 @@ final class TranslationHelpersTest extends TestCase
             {
                 return '';
             }
+            /** @return list<string> */
             public function rules(): array
             {
                 return [];
             }
+
             public function ruleSet(): RuleSet
             {
                 return new RuleSet([]);
             }
+
             public function visibleOnList(): bool
             {
                 return false;
             }
+
             public function visibleOnForm(): bool
             {
                 return false;
             }
+
             public function visibleOnShow(): bool
             {
                 return false;
             }
+
             public function isSortable(): bool
             {
                 return false;
             }
+
             public function isFilterable(): bool
             {
                 return false;
             }
+
+            /** @return array<string, mixed> */
             public function meta(): array
             {
                 return [];
             }
+
             public function writable(): bool
             {
                 return true;
+            }
+
+            public function isRelation(): bool
+            {
+                return false;
+            }
+
+            public function isSideEffect(): bool
+            {
+                return false;
+            }
+
+            public function embedStrategy(): EmbedStrategy
+            {
+                return EmbedStrategy::None;
+            }
+
+            public function pointsBackTo(string $hostModelClass): bool
+            {
+                return false;
+            }
+
+            /**
+             * @param array<string> $locales
+             * @return array<string, list<string>>
+             */
+            public function expandRules(array $locales, string $context): array
+            {
+                return [$this->name() => array_values($this->ruleSet()->toArray())];
             }
         };
     }

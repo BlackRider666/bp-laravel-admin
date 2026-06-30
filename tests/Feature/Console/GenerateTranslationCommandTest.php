@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BlackParadise\LaravelAdmin\Tests\Feature\Console;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
+use BlackParadise\CoreAdmin\Domain\Fields\EmbedStrategy;
 use BlackParadise\CoreAdmin\Domain\Validation\RuleSet;
 use BlackParadise\LaravelAdmin\Core\EntityDefinitionRegistry;
 use BlackParadise\LaravelAdmin\EntityDefinition;
@@ -117,48 +118,91 @@ final class GenerateTranslationCommandTest extends TestCase
             {
                 return 'text';
             }
+            /** @return list<string> */
             public function rules(): array
             {
                 return [];
             }
+
             public function ruleSet(): RuleSet
             {
                 return new RuleSet([]);
             }
+
             public function visibleOnList(): bool
             {
                 return true;
             }
+
             public function visibleOnForm(): bool
             {
                 return true;
             }
+
             public function visibleOnShow(): bool
             {
                 return true;
             }
+
             public function isSortable(): bool
             {
                 return false;
             }
+
             public function isFilterable(): bool
             {
                 return false;
             }
+
+            /** @return array<string, mixed> */
             public function meta(): array
             {
                 return [];
             }
+
             public function writable(): bool
             {
                 return true;
             }
+
+            public function isRelation(): bool
+            {
+                return false;
+            }
+
+            public function isSideEffect(): bool
+            {
+                return false;
+            }
+
+            public function embedStrategy(): EmbedStrategy
+            {
+                return EmbedStrategy::None;
+            }
+
+            public function pointsBackTo(string $hostModelClass): bool
+            {
+                return false;
+            }
+
+            /**
+             * @param array<string> $locales
+             * @return array<string, list<string>>
+             */
+            public function expandRules(array $locales, string $context): array
+            {
+                return [$this->name() => array_values($this->ruleSet()->toArray())];
+            }
         };
     }
 
+    /**
+     * @param list<FieldContract> $fields
+     */
     private function fakeDefinition(string $name, array $fields): EntityDefinition
     {
         return new class ($name, $fields) extends EntityDefinition {
+            /** @param list<FieldContract> $f */
             public function __construct(private readonly string $n, private readonly array $f) {}
             public function resolveName(): string
             {

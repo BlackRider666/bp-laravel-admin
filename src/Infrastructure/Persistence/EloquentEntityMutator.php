@@ -16,7 +16,6 @@ use BlackParadise\CoreAdmin\Domain\Exceptions\ValidationException;
 use BlackParadise\CoreAdmin\Domain\Fields\FileField;
 use BlackParadise\CoreAdmin\Domain\Fields\ImageField;
 use BlackParadise\CoreAdmin\Domain\Fields\MorphToField;
-use BlackParadise\CoreAdmin\Domain\Fields\RelationFieldTypes;
 use BlackParadise\CoreAdmin\Domain\Fields\TranslatableField;
 use BlackParadise\CoreAdmin\Domain\Mutators\EntityMutatorInterface;
 use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityKey;
@@ -372,7 +371,7 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
     ): array {
         $columnFields = array_filter(
             $definition->fields(),
-            fn(FieldContract $f): bool => !RelationFieldTypes::isSideEffect($f->type())
+            fn(FieldContract $f): bool => !$f->isSideEffect()
                 && $f->writable(),
         );
         $allowed = array_map(fn(FieldContract $f): string => $f->name(), $columnFields);

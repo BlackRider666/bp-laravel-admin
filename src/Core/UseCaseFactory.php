@@ -10,6 +10,7 @@ use BlackParadise\CoreAdmin\Application\UseCases\Entity\DeleteRecordUseCase;
 use BlackParadise\CoreAdmin\Application\UseCases\Entity\FindRecordUseCase;
 use BlackParadise\CoreAdmin\Application\UseCases\Entity\ListRecordsUseCase;
 use BlackParadise\CoreAdmin\Application\UseCases\Entity\ResolveEmbeddedRelationsUseCase;
+use BlackParadise\CoreAdmin\Application\UseCases\Entity\RuleBuilder;
 use BlackParadise\CoreAdmin\Application\UseCases\Entity\UpdateRecordUseCase;
 use BlackParadise\CoreAdmin\Domain\Contracts\Auth\AuthorizationProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\EntityRecordContract;
@@ -21,7 +22,6 @@ use BlackParadise\CoreAdmin\Domain\Contracts\Validation\ValidationProviderContra
 use BlackParadise\CoreAdmin\Domain\Mutators\EntityMutatorInterface;
 use BlackParadise\CoreAdmin\Domain\Repositories\EntityRepositoryInterface;
 use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityKey;
-use BlackParadise\LaravelAdmin\Infrastructure\Validation\LocaleAwareValidationWrapper;
 
 final readonly class UseCaseFactory
 {
@@ -52,8 +52,9 @@ final readonly class UseCaseFactory
             $this->mutator,
             $this->authorization,
             $def,
-            new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def, 'create'),
+            $this->validator,
             $this->dispatcher,
+            $this->localeProvider,
         );
     }
 
@@ -63,8 +64,9 @@ final readonly class UseCaseFactory
             $this->mutator,
             $this->authorization,
             $def,
-            new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def, 'update'),
+            $this->validator,
             $this->dispatcher,
+            $this->localeProvider,
         );
     }
 
@@ -96,13 +98,20 @@ final readonly class UseCaseFactory
             updateRecord: fn(EntityDefinitionContract $def, EntityKey $key, EntityRecordContract $rec): EntityRecordContract => $this->updateRecord($def)->execute($key, $rec),
             resolveDefinition: fn(string $defClass): EntityDefinitionContract => $this->registry->get((new $defClass())->resolveName()),
             validateRecord: function (EntityDefinitionContract $def, array $attrs, array $skip = []): void {
-                // LocaleAwareValidationWrapper rebuilds locale-expanded rules from $def.
-                // Throws ValidationException on failure — this converts DB 500s into 422s
-                // for hasMany/morphMany children that have required fields.
+                // Build locale-expanded rules from $def (same path the core create use case
+                // uses) and validate the child through the marker-resolving provider. Throws
+                // ValidationException on failure — converting DB 500s into 422s for
+                // hasMany/morphMany children that carry required fields.
+                $rules = (new RuleBuilder($this->localeProvider->availableLocales(), 'create'))
+                    ->build($def, array_keys($attrs));
+
                 // $skip contains back-FK field names that the ORM auto-assigns on write;
                 // they must be excluded from child validation so the form can omit them.
-                (new LocaleAwareValidationWrapper($this->validator, $this->localeProvider, $def, 'create', $skip))
-                    ->validate($attrs, []);
+                foreach ($skip as $field) {
+                    unset($rules[$field]);
+                }
+
+                $this->validator->validate($attrs, $rules);
             },
         );
     }

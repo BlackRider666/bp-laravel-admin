@@ -283,30 +283,6 @@ parameters:
 			path: src/Infrastructure/Persistence/RelationWriter.php
 
 		-
-			message: '#^Call to an undefined method object\:\:getMorphClass\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Infrastructure/Validation/LocaleAwareValidationWrapper.php
-
-		-
-			message: '#^Dynamic call to static method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:exists\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 1
-			path: src/Infrastructure/Validation/LocaleAwareValidationWrapper.php
-
-		-
-			message: '#^Parameter \#1 \$array \(array\{0\: ''nullable''\|''required''\|''sometimes'', 1\: ''string'', 2\?\: non\-falsy\-string\}\) of array_values is already a list, call has no effect\.$#'
-			identifier: arrayValues.list
-			count: 1
-			path: src/Infrastructure/Validation/LocaleAwareValidationWrapper.php
-
-		-
-			message: '#^Unable to resolve the template type T in call to function array_values$#'
-			identifier: argument.templateType
-			count: 1
-			path: src/Infrastructure/Validation/LocaleAwareValidationWrapper.php
-
-		-
 			message: '#^Dynamic call to static method Illuminate\\Routing\\RouteRegistrar\:\:prefix\(\)\.$#'
 			identifier: staticMethod.dynamicCall
 			count: 3
@@ -351,30 +327,6 @@ parameters:
 		-
 			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
 			identifier: method.nonObject
-			count: 1
-			path: tests/Feature/Console/GenerateTranslationCommandTest.php
-
-		-
-			message: '#^Method BlackParadise\\CoreAdmin\\Domain\\Contracts\\Fields\\FieldContract@anonymous/tests/Feature/Console/GenerateTranslationCommandTest\.php\:105\:\:meta\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Feature/Console/GenerateTranslationCommandTest.php
-
-		-
-			message: '#^Method BlackParadise\\CoreAdmin\\Domain\\Contracts\\Fields\\FieldContract@anonymous/tests/Feature/Console/GenerateTranslationCommandTest\.php\:105\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Feature/Console/GenerateTranslationCommandTest.php
-
-		-
-			message: '#^Method BlackParadise\\LaravelAdmin\\EntityDefinition@anonymous/tests/Feature/Console/GenerateTranslationCommandTest\.php\:161\:\:__construct\(\) has parameter \$f with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Feature/Console/GenerateTranslationCommandTest.php
-
-		-
-			message: '#^Method BlackParadise\\LaravelAdmin\\Tests\\Feature\\Console\\GenerateTranslationCommandTest\:\:fakeDefinition\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Feature/Console/GenerateTranslationCommandTest.php
 
@@ -773,6 +725,60 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: tests/Feature/MorphToValidationTest.php
+
+		-
+			message: '#^Method BlackParadise\\LaravelAdmin\\Tests\\Feature\\Http\\MorphMarkerNote\:\:notable\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\MorphTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: tests/Feature/Http/MorphToMarkerValidationTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/MorphToMarkerValidationTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/MorphToMarkerValidationTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/MorphToMarkerValidationTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Http/MorphToMarkerValidationTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/BelongsToFkValidationTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/BelongsToFkValidationTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$password\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Http/BelongsToFkValidationTest.php
+
+		-
+			message: '#^Cannot call method bind\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Http/BelongsToFkValidationTest.php
 
 		-
 			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
@@ -2629,12 +2635,6 @@ parameters:
 			path: tests/Integration/Infrastructure/RepositoryLikeFilterEscapeTest.php
 
 		-
-			message: '#^Cannot call method make\(\) on Illuminate\\Foundation\\Application\|null\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: tests/Integration/Infrastructure/Validation/RelationExistsRewriteTest.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2827,16 +2827,16 @@ parameters:
 			path: tests/Unit/Core/UseCaseFactoryTest.php
 
 		-
+			message: '#^Dynamic call to static method PHPUnit\\Framework\\TestCase\:\:createStub\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 8
+			path: tests/Unit/Core/UseCaseFactoryLocaleWiringTest.php
+
+		-
 			message: '#^Parameter \#1 \$json of function json_decode expects string, string\|false given\.$#'
 			identifier: argument.type
 			count: 3
 			path: tests/Unit/Http/Presenters/JsonEntityPresenterProjectionTest.php
-
-		-
-			message: '#^Dynamic call to static method PHPUnit\\Framework\\TestCase\:\:createStub\(\)\.$#'
-			identifier: staticMethod.dynamicCall
-			count: 6
-			path: tests/Unit/Infrastructure/Validation/LocaleAwareValidationWrapperTest.php
 
 		-
 			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertIsString\(\) with string will always evaluate to true\.$#'
@@ -2865,18 +2865,6 @@ parameters:
 		-
 			message: '#^Cannot call method forgetInstance\(\) on Illuminate\\Foundation\\Application\|null\.$#'
 			identifier: method.nonObject
-			count: 1
-			path: tests/Unit/Support/TranslationHelpersTest.php
-
-		-
-			message: '#^Method BlackParadise\\CoreAdmin\\Domain\\Contracts\\Fields\\FieldContract@anonymous/tests/Unit/Support/TranslationHelpersTest\.php\:69\:\:meta\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: tests/Unit/Support/TranslationHelpersTest.php
-
-		-
-			message: '#^Method BlackParadise\\CoreAdmin\\Domain\\Contracts\\Fields\\FieldContract@anonymous/tests/Unit/Support/TranslationHelpersTest\.php\:69\:\:rules\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
 			count: 1
 			path: tests/Unit/Support/TranslationHelpersTest.php
 

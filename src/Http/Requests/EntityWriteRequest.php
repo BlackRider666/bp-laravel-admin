@@ -7,7 +7,6 @@ namespace BlackParadise\LaravelAdmin\Http\Requests;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
 use BlackParadise\CoreAdmin\Domain\Fields\MorphToField;
-use BlackParadise\CoreAdmin\Domain\Fields\RelationFieldTypes;
 use BlackParadise\LaravelAdmin\Core\EntityDefinitionRegistry;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -54,7 +53,7 @@ final class EntityWriteRequest extends FormRequest
             fn(FieldContract $f): string => $f->name(),
             array_filter(
                 $definition->fields(),
-                fn(FieldContract $f): bool => $f->writable() || RelationFieldTypes::isSideEffect($f->type()),
+                fn(FieldContract $f): bool => $f->writable() || $f->isSideEffect(),
             ),
         ));
 

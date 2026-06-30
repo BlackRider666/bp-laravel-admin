@@ -100,7 +100,7 @@ final class EmbeddedBookWithChaptersDefinition extends EntityDefinition
  *
  * ResolveEmbeddedRelationsUseCase (core B.1) passes a list<string> $skipFields
  * as the 3rd arg to the $validateRecord closure. The Laravel adapter must
- * forward those field names to LocaleAwareValidationWrapper, which drops them
+ * forward those field names to the child validation path, which drops them
  * from the rule set before validating the child.
  *
  * Without the fix: POST with embedded chapters that omit 'embedded_book_id'
