@@ -6,118 +6,84 @@ namespace BlackParadise\LaravelAdmin\Infrastructure\Persistence;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\EntityRecordContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
-use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
-use BlackParadise\CoreAdmin\Domain\Contracts\Files\FileStorageProviderContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\TransactionContract;
-use BlackParadise\CoreAdmin\Domain\Contracts\ValueHasherContract;
 use BlackParadise\CoreAdmin\Domain\Entity\EntityRecord;
 use BlackParadise\CoreAdmin\Domain\Exceptions\EntityNotFoundException;
 use BlackParadise\CoreAdmin\Domain\Exceptions\ValidationException;
-use BlackParadise\CoreAdmin\Domain\Fields\FileField;
-use BlackParadise\CoreAdmin\Domain\Fields\ImageField;
-use BlackParadise\CoreAdmin\Domain\Fields\MorphToField;
-use BlackParadise\CoreAdmin\Domain\Fields\TranslatableField;
 use BlackParadise\CoreAdmin\Domain\Mutators\EntityMutatorInterface;
 use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityKey;
+use BlackParadise\LaravelAdmin\Exceptions\ModelLessDefinitionException;
+use BlackParadise\LaravelAdmin\Infrastructure\Persistence\FieldPersisters\FieldPersisterRegistry;
+use BlackParadise\LaravelAdmin\Infrastructure\Persistence\FieldPersisters\PersistContext;
 use BlackParadise\LaravelAdmin\Support\DeferredFileOperations;
-use Illuminate\Database\Eloquent\Casts\AsArrayObject;
-use Illuminate\Database\Eloquent\Casts\AsCollection;
-use Illuminate\Database\Eloquent\Casts\AsEncryptedArrayObject;
-use Illuminate\Database\Eloquent\Casts\AsEncryptedCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\QueryException;
-use Illuminate\Http\UploadedFile;
 use Throwable;
 
 /**
  * Eloquent implementation of {@see EntityMutatorInterface}.
  *
- * Acts as a thin coordinator: filters incoming attributes against the
- * EntityDefinition (column/file/hashed/translatable transforms), performs the
- * host create/update/delete inside a transaction managed by the injected
- * {@see TransactionContract}, and delegates side-effect concerns to focused
- * collaborators:
+ * Orchestrator only: per-field-type write logic lives in the
+ * {@see FieldPersisterRegistry} strategies. A write is
+ *   1. every handled field's `toAttributes()` → host columns,
+ *   2. host create/update inside a transaction managed by {@see TransactionContract},
+ *   3. every handled field's `afterSave()` in the same transaction.
+ * Deletes run every field's `beforeDelete()` before the host row is removed.
  *
- *  - {@see RelationWriter} — belongsToMany / hasOne / hasMany / morphMany writes.
- *  - {@see MorphFilePersister} — morph_file record + file lifecycle.
- *
- * Cleanup of replaced/associated column files (file/image fields) happens
- * here because it is coupled to the host model's column attributes — see
- * {@see cleanupReplacedFiles()} and {@see collectAssociatedFilePaths()}.
+ * File side-effects are only recorded in {@see DeferredFileOperations} (uploads
+ * rolled back on failure, removals applied after commit).
  */
 final readonly class EloquentEntityMutator implements EntityMutatorInterface
 {
     public function __construct(
-        private ValueHasherContract $hasher,
-        private FileStorageProviderContract $fileStorage,
-        private MorphFilePersister $morphFiles,
-        private RelationWriter $relations,
+        private FieldPersisterRegistry $persisters,
         private TransactionContract $transactions,
         private DeferredFileOperations $deferredFiles,
     ) {}
 
     public function create(EntityRecordContract $record): EntityRecordContract
     {
-        $definition    = $record->definition();
-        $rawAttributes = $record->attributes();
-        $relationData  = $this->relations->extractRelationPayload($definition, $rawAttributes);
-
-        /** @var Model $instance */
-        $instance = resolve($definition->modelClass());
-
-        $filteredAttributes = $this->filterAttributes($definition, $rawAttributes);
+        $definition = $record->definition();
+        $raw        = $record->attributes();
+        $context    = new PersistContext($definition, $raw, $this->deferredFiles);
 
         try {
+            $columns = $this->collectColumns($definition, $context);
+
             /** @var Model $created */
-            $created = $this->transactions->executeInTransaction(function () use ($instance, $filteredAttributes, $relationData, $definition, $rawAttributes): Model {
-                $host = $instance->newQuery()->create($filteredAttributes);
-                $this->relations->applyAll($host, $definition, $relationData);
-                foreach ($this->morphFiles->persistOnCreate($host, $definition, $rawAttributes) as $up) {
-                    $this->deferredFiles->recordUpload($up['path'], $up['disk']);
-                }
+            $created = $this->transactions->executeInTransaction(function () use ($definition, $columns, $raw, $context): Model {
+                /** @var Model $instance */
+                $instance = resolve($definition->modelClass() ?? throw ModelLessDefinitionException::forDefinition($definition));
+                $host     = $instance->newQuery()->create($columns);
+                $this->afterSave($host, $definition, $raw, $context);
+
                 return $host->refresh();
             });
         } catch (QueryException $e) {
-            // On DB failure: roll back any uploaded files (removes orphans).
-            // Self-flush only when no outer scope owner (e.g. the controller) has
-            // registered itself to handle the final flush. When an outer scope
-            // exists the controller's finally-block calls rollback().
-            if (!$this->deferredFiles->hasOuterScope()) {
-                $this->deferredFiles->rollback();
-            }
+            $this->discardOnFailure();
             throw $this->convertQueryException($e);
         } catch (Throwable $e) {
-            if (!$this->deferredFiles->hasOuterScope()) {
-                $this->deferredFiles->rollback();
-            }
+            $this->discardOnFailure();
             throw $e;
         }
 
-        // Self-flush only when no outer scope owner has registered. When the
-        // controller (or another outer caller) has called beginOuterScope(), it
-        // will flush at the true outermost transaction boundary via its finally.
-        if (!$this->deferredFiles->hasOuterScope()) {
-            $this->deferredFiles->commit();
-        }
-
-        $serializedRelations = $this->serializeRelations($created->getRelations());
+        $this->flushIfOwner();
 
         return new EntityRecord(
             definition: $definition,
             attributes: $created->attributesToArray(),
-            relations: $serializedRelations,
+            relations: $this->serializeRelations($created->getRelations()),
         );
     }
 
     public function update(EntityKey $key, EntityRecordContract $record): EntityRecordContract
     {
-        $definition    = $record->definition();
-        $rawAttributes = $record->attributes();
-        $relationData  = $this->relations->extractRelationPayload($definition, $rawAttributes);
+        $definition = $record->definition();
+        $raw        = $record->attributes();
 
         /** @var Model $instance */
-        $instance = resolve($definition->modelClass());
+        $instance = resolve($definition->modelClass() ?? throw ModelLessDefinitionException::forDefinition($definition));
 
         /** @var Model|null $existing */
         $existing = $instance->newQuery()->find($key->value);
@@ -126,59 +92,38 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
             throw new EntityNotFoundException($definition->name(), $key->value);
         }
 
-        $oldFilePaths       = $this->getExistingFilePaths($definition, $existing);
-        $filteredAttributes = $this->filterAttributes($definition, $rawAttributes);
+        $context = new PersistContext($definition, $raw, $this->deferredFiles, $existing);
 
         try {
-            $updated = $this->transactions->executeInTransaction(function () use ($existing, $filteredAttributes, $relationData, $definition, $rawAttributes): Model {
-                $existing->update($filteredAttributes);
-                $this->relations->applyAll($existing, $definition, $relationData);
-                $morphResult = $this->morphFiles->persistOnUpdate($existing, $definition, $rawAttributes);
-                foreach ($morphResult['uploaded'] as $up) {
-                    $this->deferredFiles->recordUpload($up['path'], $up['disk']);
-                }
-                foreach ($morphResult['deferredDeletes'] as $d) {
-                    $this->deferredFiles->recordDeletion($d['path'], $d['disk']);
-                }
+            $columns = $this->collectColumns($definition, $context);
+
+            $updated = $this->transactions->executeInTransaction(function () use ($existing, $definition, $columns, $raw, $context): Model {
+                $existing->update($columns);
+                $this->afterSave($existing, $definition, $raw, $context);
+
                 return $existing->refresh();
             });
         } catch (QueryException $e) {
-            // On DB failure: roll back any uploaded files (removes orphans).
-            // Self-flush only when no outer scope owner has registered.
-            if (!$this->deferredFiles->hasOuterScope()) {
-                $this->deferredFiles->rollback();
-            }
+            $this->discardOnFailure();
             throw $this->convertQueryException($e);
         } catch (Throwable $e) {
-            if (!$this->deferredFiles->hasOuterScope()) {
-                $this->deferredFiles->rollback();
-            }
+            $this->discardOnFailure();
             throw $e;
         }
 
-        // Replaced column files — record for deferred deletion.
-        $this->recordReplacedFileDeletions($oldFilePaths, $filteredAttributes, $definition);
-
-        // Self-flush only when no outer scope owner has registered. When the
-        // controller (or another outer caller) has called beginOuterScope(), it
-        // will flush at the true outermost transaction boundary via its finally.
-        if (!$this->deferredFiles->hasOuterScope()) {
-            $this->deferredFiles->commit();
-        }
-
-        $serializedRelations = $this->serializeRelations($updated->getRelations());
+        $this->flushIfOwner();
 
         return new EntityRecord(
             definition: $definition,
             attributes: $updated->attributesToArray(),
-            relations: $serializedRelations,
+            relations: $this->serializeRelations($updated->getRelations()),
         );
     }
 
     public function delete(EntityKey $key, EntityDefinitionContract $entityDefinition): bool
     {
         /** @var Model $instance */
-        $instance = resolve($entityDefinition->modelClass());
+        $instance = resolve($entityDefinition->modelClass() ?? throw ModelLessDefinitionException::forDefinition($entityDefinition));
 
         /** @var Model|null $existing */
         $existing = $instance->newQuery()->find($key->value);
@@ -187,52 +132,93 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
             return false;
         }
 
-        /** @var list<array{path: string, disk: ?string}> $pathsToDelete */
-        $pathsToDelete = [];
+        $softDeletable = in_array(SoftDeletes::class, class_uses_recursive($existing), true);
+        $force         = $softDeletable
+            && method_exists($existing, 'isForceDeleting')
+            && $existing->isForceDeleting();
+        $context = new PersistContext($entityDefinition, [], $this->deferredFiles, $existing, $force, $softDeletable);
 
-        $deleted = $this->transactions->executeInTransaction(function () use ($existing, $entityDefinition, &$pathsToDelete): bool {
-            $this->relations->detachBelongsToManyPivots($existing, $entityDefinition);
+        try {
+            $deleted = $this->transactions->executeInTransaction(function () use ($existing, $entityDefinition, $context): bool {
+                foreach ($entityDefinition->fields() as $field) {
+                    $this->persisters->for($field)->beforeDelete($field, $existing, $context);
+                }
 
-            // Collect paths BEFORE deleting DB rows; deleted rows would be unreachable.
-            foreach ($this->morphFiles->collectPathsForDelete($existing, $entityDefinition) as $item) {
-                $pathsToDelete[] = $item;
-            }
-            foreach ($this->collectAssociatedFilePaths($entityDefinition, $existing) as $item) {
-                $pathsToDelete[] = $item;
-            }
-
-            // Delete DB rows only — no disk I/O inside the transaction.
-            $this->morphFiles->deleteRecords($existing, $entityDefinition);
-
-            return (bool) $existing->delete();
-        });
+                return (bool) $existing->delete();
+            });
+        } catch (Throwable $e) {
+            $this->discardOnFailure();
+            throw $e;
+        }
 
         if ($deleted) {
-            /** @var array<class-string, bool> $softDeleteTraitCache */
-            static $softDeleteTraitCache = [];
-            $usesSoftDeletes = $softDeleteTraitCache[$existing::class]
-                ??= in_array(SoftDeletes::class, class_uses_recursive($existing), true);
-            $isSoftDelete = $usesSoftDeletes
-                && method_exists($existing, 'isForceDeleting')
-                && !$existing->isForceDeleting();
-
-            if (!$isSoftDelete) {
-                foreach ($pathsToDelete as $item) {
-                    $this->deferredFiles->recordDeletion($item['path'], $item['disk']);
-                }
-            }
-
-            // Self-flush only when no outer scope owner has registered. Direct
-            // callers (CLI / seeder / bulkDestroy per-iteration) have no outer scope,
-            // so the mutator flushes immediately. The HTTP destroy path registers an
-            // outer scope via the controller's beginOuterScope(), so flushing is
-            // deferred to the controller's finally block.
-            if (!$this->deferredFiles->hasOuterScope()) {
-                $this->deferredFiles->commit();
-            }
+            // Self-flush only when no outer scope owner has registered (CLI / seeder /
+            // bulk per-iteration). The HTTP path flushes in the controller's finally.
+            $this->flushIfOwner();
+        } else {
+            $this->discardOnFailure();
         }
 
         return $deleted;
+    }
+
+    /**
+     * Host columns for this write: union of every handled field's toAttributes().
+     *
+     * @return array<string, mixed>
+     */
+    private function collectColumns(EntityDefinitionContract $definition, PersistContext $context): array
+    {
+        $columns = [];
+        foreach ($definition->fields() as $field) {
+            if (!$field->isSideEffect() && !$field->writable() && $field->type() !== 'morph_to') {
+                continue;
+            }
+            $persister = $this->persisters->for($field);
+            if (!$persister->handles($field, $context->attributes)) {
+                continue;
+            }
+            $columns = array_merge(
+                $columns,
+                $persister->toAttributes($field, $context->attributes[$field->name()] ?? null, $context),
+            );
+        }
+
+        return $columns;
+    }
+
+    /**
+     * @param array<string, mixed> $raw
+     */
+    private function afterSave(Model $host, EntityDefinitionContract $definition, array $raw, PersistContext $context): void
+    {
+        foreach ($definition->fields() as $field) {
+            if (!$field->isSideEffect() && !$field->writable()) {
+                continue;
+            }
+            $persister = $this->persisters->for($field);
+            if ($persister->handles($field, $raw)) {
+                $persister->afterSave($field, $raw[$field->name()] ?? null, $host, $context);
+            }
+        }
+    }
+
+    /**
+     * Roll back uploads + drop recorded removals — only when no outer scope owner
+     * (e.g. the controller) will do it in its own finally block.
+     */
+    private function discardOnFailure(): void
+    {
+        if (!$this->deferredFiles->hasOuterScope()) {
+            $this->deferredFiles->rollback();
+        }
+    }
+
+    private function flushIfOwner(): void
+    {
+        if (!$this->deferredFiles->hasOuterScope()) {
+            $this->deferredFiles->commit();
+        }
     }
 
     /**
@@ -351,296 +337,6 @@ final readonly class EloquentEntityMutator implements EntityMutatorInterface
             return '_database';
         }
         return null;
-    }
-
-    /**
-     * Filter raw attributes to only the fields declared in the entity definition.
-     *
-     * Applies field-type-specific transformations:
-     * - 'hashed': empty values stripped; already-hashed values stored as-is; plain text hashed.
-     * - 'file'/'image': UploadedFile stored to disk, replaced with path string;
-     *   upload path recorded in DeferredFileOperations for rollback on outer tx failure.
-     * - 'translatable': array JSON-encoded unless model cast or managedByModel flag suppresses it.
-     *
-     * @param array<string, mixed> $attributes
-     * @return array<string, mixed>
-     */
-    private function filterAttributes(
-        EntityDefinitionContract $definition,
-        array $attributes,
-    ): array {
-        $columnFields = array_filter(
-            $definition->fields(),
-            fn(FieldContract $f): bool => !$f->isSideEffect()
-                && $f->writable(),
-        );
-        $allowed = array_map(fn(FieldContract $f): string => $f->name(), $columnFields);
-        $filtered = array_intersect_key($attributes, array_flip($allowed));
-
-        // Resolved lazily once for the translatable-encoding check; avoids
-        // repeated Service Container lookups inside the field loop.
-        $modelInstance = null;
-
-        foreach ($columnFields as $field) {
-            $name = $field->name();
-            if (!array_key_exists($name, $filtered)) {
-                continue;
-            }
-
-            if ($field->type() === 'hashed') {
-                $value = $filtered[$name];
-                if (
-                    in_array($value, ['', null, false], true)
-                    || (is_string($value) && trim($value) === '')
-                ) {
-                    unset($filtered[$name]);
-                } elseif (is_string($value) && $this->hasher->isHashed($value)) {
-                    // Already hashed (e.g. round-trip of existing value) — store as-is.
-                    $filtered[$name] = $value;
-                } else {
-                    $filtered[$name] = $this->hasher->hash((string) $value);
-                }
-            }
-
-            if (in_array($field->type(), ['file', 'image'], true)) {
-                $value = $filtered[$name];
-                if ($value instanceof UploadedFile) {
-                    $dir = ($field instanceof FileField && $field->getDirectory() !== '')
-                        ? $field->getDirectory()
-                        : (($field instanceof ImageField && $field->getDirectory() !== '')
-                            ? $field->getDirectory()
-                            : $definition->name() . '/' . $name);
-
-                    $disk = $this->fieldDisk($field);
-                    $storedPath = $this->fileStorage->store($dir, $value, $disk);
-                    $filtered[$name] = $storedPath;
-                    $this->deferredFiles->recordUpload($storedPath, $disk);
-                } elseif ($value === null || $value === '') {
-                    unset($filtered[$name]);
-                }
-            }
-
-            if ($field->type() === 'translatable' && isset($filtered[$name]) && is_array($filtered[$name])) {
-                // Resolve host model instance once per filterAttributes() call.
-                $modelInstance ??= resolve($definition->modelClass());
-                if ($this->shouldEncodeTranslatable($field, $modelInstance)) {
-                    $filtered[$name] = json_encode($filtered[$name], JSON_UNESCAPED_UNICODE);
-                }
-            }
-        }
-
-        // morphTo fields persist two columns ({name}_type / {name}_id) keyed off
-        // the column names, not the field name. Admit + normalise the type value
-        // to its morph-map class (alias when an enforced morph map exists).
-        foreach ($definition->fields() as $field) {
-            if (!$field instanceof MorphToField) {
-                continue;
-            }
-            $typeCol = $field->typeColumn();
-            $idCol   = $field->idColumn();
-            if (array_key_exists($typeCol, $attributes) && array_key_exists($idCol, $attributes)) {
-                $rawType = (string) $attributes[$typeCol];
-                if (class_exists($rawType) && is_subclass_of($rawType, Model::class)) {
-                    $instance = new $rawType();
-                    $filtered[$typeCol] = $instance->getMorphClass();
-                } else {
-                    $filtered[$typeCol] = $rawType;
-                }
-                $filtered[$idCol] = $attributes[$idCol];
-            }
-        }
-
-        return $filtered;
-    }
-
-    /**
-     * Resolve the disk for a file/image field, or null when not configured.
-     */
-    private function fieldDisk(FieldContract $field): ?string
-    {
-        if ($field instanceof FileField) {
-            $disk = $field->getDisk();
-            return $disk !== '' ? $disk : null;
-        }
-        if ($field instanceof ImageField) {
-            $disk = $field->getDisk();
-            return $disk !== '' ? $disk : null;
-        }
-        return null;
-    }
-
-    /**
-     * Cast types that already serialize the attribute value into JSON on save.
-     * If a column has one of these casts, we must NOT pre-encode in the mutator
-     * or we double-encode.
-     *
-     * Covers Laravel built-ins and Spatie-translatable (which uses 'array').
-     * AsArrayObject/AsCollection classes may include `:` parameters — we strip.
-     */
-    private const SELF_SERIALIZING_CASTS = [
-        'array',
-        'json',
-        'object',
-        'collection',
-        'translatable', // Spatie convention in some projects
-    ];
-
-    /**
-     * Class-string casts that handle their own serialization. We must NOT
-     * pre-encode values flowing into a column with one of these casts.
-     *
-     * `is_subclass_of` covers user-defined casts that extend these classes.
-     * `class_exists` guards against missing classes in older Laravel versions.
-     */
-    private const SELF_SERIALIZING_CAST_CLASSES = [
-        AsArrayObject::class,
-        AsCollection::class,
-        AsEncryptedArrayObject::class,
-        AsEncryptedCollection::class,
-    ];
-
-    /**
-     * Decide whether the mutator should serialize a translatable value into JSON.
-     *
-     * Rules (highest priority first):
-     *   1. `TranslatableField->isManagedByModel()` set → NEVER encode.
-     *   2. Host model declares a self-serializing string cast on the column → NEVER encode.
-     *   3. Host model declares a self-serializing class-string cast → NEVER encode.
-     *   4. Otherwise → encode (legacy behavior preserved).
-     */
-    private function shouldEncodeTranslatable(
-        FieldContract $field,
-        Model $model,
-    ): bool {
-        if ($field instanceof TranslatableField
-            && $field->isManagedByModel()
-        ) {
-            return false;
-        }
-
-        $castType = $this->extractCastType($model, $field->name());
-        if ($castType !== null) {
-            if (in_array($castType, self::SELF_SERIALIZING_CASTS, true)) {
-                return false;
-            }
-            if ($this->isSelfSerializingClassCast($castType)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Return true when $cast is a class-string that handles its own serialization.
-     *
-     * Covers exact matches and subclasses (e.g. user-defined casts extending
-     * AsArrayObject). If the class does not exist in this installation the check
-     * returns false gracefully.
-     */
-    private function isSelfSerializingClassCast(string $cast): bool
-    {
-        if (!class_exists($cast)) {
-            return false;
-        }
-        foreach (self::SELF_SERIALIZING_CAST_CLASSES as $known) {
-            if ($cast === $known || is_subclass_of($cast, $known)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Class-string casts (AsArrayObject, AsCollection, custom) are returned as-is —
-     * callers must use {@see isSelfSerializingClassCast()} to inspect them.
-     *
-     * Built-in scalar casts have any parameter suffix stripped (e.g. `datetime:Y-m-d`
-     * → `datetime`).
-     */
-    private function extractCastType(Model $model, string $attribute): ?string
-    {
-        $casts = $model->getCasts();
-        if (!array_key_exists($attribute, $casts)) {
-            return null;
-        }
-        $raw = (string) $casts[$attribute];
-        $colonPos = strpos($raw, ':');
-        return $colonPos === false ? $raw : substr($raw, 0, $colonPos);
-    }
-
-    /**
-     * Capture existing file paths from the model before update.
-     *
-     * @return array<string, string|null>
-     */
-    private function getExistingFilePaths(EntityDefinitionContract $definition, Model $model): array
-    {
-        $paths = [];
-        foreach ($definition->fields() as $field) {
-            if (in_array($field->type(), ['file', 'image'], true)) {
-                $paths[$field->name()] = $model->getAttribute($field->name());
-            }
-        }
-
-        return $paths;
-    }
-
-    /**
-     * Record old files that were replaced during an update as deferred deletions.
-     * The controller flushes the DeferredFileOperations collector at the outermost
-     * transaction boundary, ensuring old files are only removed on commit.
-     *
-     * @param array<string, string|null> $oldPaths
-     * @param array<string, mixed> $newAttributes
-     */
-    private function recordReplacedFileDeletions(
-        array $oldPaths,
-        array $newAttributes,
-        EntityDefinitionContract $definition,
-    ): void {
-        $diskByField = $this->fileFieldDiskMap($definition);
-        foreach ($oldPaths as $name => $oldPath) {
-            if ($oldPath !== null && $oldPath !== '' && isset($newAttributes[$name]) && $newAttributes[$name] !== $oldPath) {
-                $this->deferredFiles->recordDeletion($oldPath, $diskByField[$name] ?? null);
-            }
-        }
-    }
-
-    /**
-     * Collect all disk paths stored in file/image columns of a model.
-     * Does NOT delete any DB rows or disk files.
-     *
-     * @return list<array{path: string, disk: ?string}>
-     */
-    private function collectAssociatedFilePaths(EntityDefinitionContract $definition, Model $model): array
-    {
-        $paths = [];
-        foreach ($definition->fields() as $field) {
-            if (in_array($field->type(), ['file', 'image'], true)) {
-                $path = $model->getAttribute($field->name());
-                if (is_string($path) && $path !== '') {
-                    $paths[] = ['path' => $path, 'disk' => $this->fieldDisk($field)];
-                }
-            }
-        }
-        return $paths;
-    }
-
-    /**
-     * Build a map of file/image field name → configured disk (or null).
-     *
-     * @return array<string, ?string>
-     */
-    private function fileFieldDiskMap(EntityDefinitionContract $definition): array
-    {
-        $map = [];
-        foreach ($definition->fields() as $field) {
-            if (in_array($field->type(), ['file', 'image'], true)) {
-                $map[$field->name()] = $this->fieldDisk($field);
-            }
-        }
-        return $map;
     }
 
     /**

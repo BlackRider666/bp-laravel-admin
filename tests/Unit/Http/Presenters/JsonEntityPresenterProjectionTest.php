@@ -9,6 +9,7 @@ use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionCo
 use BlackParadise\CoreAdmin\Domain\Entity\EntityRecord;
 use BlackParadise\CoreAdmin\Domain\Fields\TextField;
 use BlackParadise\CoreAdmin\Domain\Query\PaginatedResult;
+use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityCapabilities;
 use BlackParadise\LaravelAdmin\Http\Presenters\Json\JsonEntityPresenter;
 use BlackParadise\LaravelAdmin\Tests\Integration\Fixtures\TestItem;
 use BlackParadise\LaravelAdmin\Tests\TestCase;
@@ -73,6 +74,32 @@ final class JsonEntityPresenterProjectionTest extends TestCase
             public function searchFields(): array
             {
                 return [];
+            }
+
+            public function resolveName(): string
+            {
+                return 'stub';
+            }
+
+            public function capabilities(): EntityCapabilities
+            {
+                return EntityCapabilities::all();
+            }
+
+            /** @return array<mixed> */
+            public function filters(): array
+            {
+                return [];
+            }
+
+            public function repository(): null
+            {
+                return null;
+            }
+
+            public function mutator(): null
+            {
+                return null;
             }
         };
     }

@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace BlackParadise\LaravelAdmin\Core;
 
 use BlackParadise\CoreAdmin\Domain\Fields\Base\AbstractField;
+use BlackParadise\LaravelAdmin\Infrastructure\Persistence\FieldPersisters\FieldPersisterContract;
+use BlackParadise\LaravelAdmin\Infrastructure\Persistence\FieldPersisters\FieldPersisterRegistry;
+use BlackParadise\LaravelAdmin\Infrastructure\Persistence\Query\FieldQueryRegistry;
+use BlackParadise\LaravelAdmin\Infrastructure\Persistence\Query\FieldQueryStrategyContract;
 use InvalidArgumentException;
 
 /**
@@ -18,14 +22,23 @@ final class FieldTypeRegistry
     /** @var array<string, class-string<AbstractField>> */
     private array $map = [];
 
+    public function __construct(
+        private readonly ?FieldPersisterRegistry $persisters = null,
+        private readonly ?FieldQueryRegistry $queries = null,
+    ) {}
+
     /**
-     * Register a field type mapping.
+     * Register a field type mapping, optionally with its persister and query strategy.
      *
      * @param class-string<AbstractField> $fieldClass
      * @throws InvalidArgumentException when the class does not exist or does not extend AbstractField.
      */
-    public function register(string $type, string $fieldClass): void
-    {
+    public function register(
+        string $type,
+        string $fieldClass,
+        ?FieldPersisterContract $persister = null,
+        ?FieldQueryStrategyContract $query = null,
+    ): void {
         if (!class_exists($fieldClass)) {
             throw new InvalidArgumentException("Field class '{$fieldClass}' does not exist.");
         }
@@ -37,6 +50,13 @@ final class FieldTypeRegistry
         }
 
         $this->map[$type] = $fieldClass;
+
+        if ($persister instanceof FieldPersisterContract) {
+            $this->persisters?->register($type, $persister);
+        }
+        if ($query instanceof FieldQueryStrategyContract) {
+            $this->queries?->register($type, $query);
+        }
     }
 
     /**

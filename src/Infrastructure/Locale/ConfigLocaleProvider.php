@@ -6,7 +6,7 @@ namespace BlackParadise\LaravelAdmin\Infrastructure\Locale;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\LocaleProviderContract;
 
-final class ConfigLocaleProvider implements LocaleProviderContract
+final readonly class ConfigLocaleProvider implements LocaleProviderContract
 {
     public function availableLocales(): array
     {

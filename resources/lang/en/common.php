@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'buttons' => [
         'create'  => 'Create',
@@ -36,6 +38,12 @@ return [
         'welcome_title' => 'Welcome to the admin panel',
         'welcome_body'  => 'Select a section from the sidebar to begin.',
         'manage'        => 'Manage :entity',
+    ],
+    'files' => [
+        'remove' => 'Remove current file',
+    ],
+    'row_actions' => [
+        'label' => 'Row actions',
     ],
     'actions' => 'Actions',
 ];

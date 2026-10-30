@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'required' => 'Поле :attribute є обов\'язковим.',
     'email'    => 'Поле :attribute має бути дійсною електронною адресою.',

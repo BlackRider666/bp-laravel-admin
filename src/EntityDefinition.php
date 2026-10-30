@@ -7,6 +7,9 @@ namespace BlackParadise\LaravelAdmin;
 use BlackParadise\CoreAdmin\Domain\Contracts\Action\ActionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
+use BlackParadise\CoreAdmin\Domain\Fields\Base\AbstractField;
+use BlackParadise\CoreAdmin\Domain\ValueObjects\Capability;
+use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityCapabilities;
 use Illuminate\Support\Str;
 use LogicException;
 
@@ -24,7 +27,8 @@ use LogicException;
 abstract class EntityDefinition implements EntityDefinitionContract
 {
     /**
-     * Fully-qualified Eloquent model class.
+     * Fully-qualified Eloquent model class. Left unset by model-less definitions
+     * (custom {@see repository()} / {@see mutator()}, no Eloquent model).
      *
      * @var class-string
      */
@@ -49,7 +53,8 @@ abstract class EntityDefinition implements EntityDefinitionContract
      * Whether records of this entity can be created directly through the admin
      * panel. Set to false for embed-only definitions (registered solely as
      * embed targets) so their create form and store endpoint are not directly
-     * accessible — see {@see isCreatable()}.
+     * accessible — see {@see isCreatable()}. Capabilities (including this flag) govern
+     * the standalone surfaces only; embedded children are governed by authorization.
      */
     public bool $creatable = true;
 
@@ -124,11 +129,45 @@ abstract class EntityDefinition implements EntityDefinitionContract
     /**
      * {@inheritDoc}
      *
-     * Returns the fully-qualified Eloquent model class name.
+     * Returns the fully-qualified Eloquent model class name, or null for a
+     * model-less definition.
      */
-    public function modelClass(): string
+    public function modelClass(): ?string
     {
-        return $this->model;
+        return $this->model ?? null;
+    }
+
+    /**
+     * Class-string of a custom {@see \BlackParadise\CoreAdmin\Domain\Repositories\EntityRepositoryInterface}
+     * used for reads of this definition, or null for the globally bound (Eloquent) repository.
+     *
+     * @return class-string|null
+     */
+    public function repository(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Class-string of a custom {@see \BlackParadise\CoreAdmin\Domain\Mutators\EntityMutatorInterface}
+     * used for writes of this definition, or null for the globally bound (Eloquent) mutator.
+     *
+     * @return class-string|null
+     */
+    public function mutator(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Write capabilities of this definition. Derived from {@see isCreatable()} by default;
+     * override (e.g. `EntityCapabilities::readOnly()`) for finer control.
+     */
+    public function capabilities(): EntityCapabilities
+    {
+        $all = EntityCapabilities::all();
+
+        return $this->isCreatable() ? $all : $all->without(Capability::Create);
     }
 
     /**
@@ -144,14 +183,24 @@ abstract class EntityDefinition implements EntityDefinitionContract
     /**
      * {@inheritDoc}
      *
-     * Returns the field names to include in full-text search.
-     * Override to specify searchable fields for this entity.
+     * Returns the field names to include in full-text search. By default
+     * derived from the (memoized) {@see fields()}: every AbstractField marked
+     * with `->searchable()`, in field order. Override to specify the list
+     * explicitly; an override always wins.
      *
      * @return array<string>
      */
     public function searchFields(): array
     {
-        return [];
+        $names = [];
+
+        foreach ($this->fields() as $field) {
+            if ($field instanceof AbstractField && $field->isSearchable()) {
+                $names[] = $field->name();
+            }
+        }
+
+        return $names;
     }
 
     /**
@@ -200,7 +249,9 @@ abstract class EntityDefinition implements EntityDefinitionContract
      * Return custom action definitions for this entity.
      * Override to add bulk or row-level actions.
      *
-     * @return array<ActionContract>
+     * Entries are class-strings, resolved via ActionResolverContract.
+     *
+     * @return list<class-string<ActionContract>>
      */
     public function actions(): array
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'buttons' => [
         'create'  => 'Створити',
@@ -36,6 +38,12 @@ return [
         'welcome_title' => 'Ласкаво просимо до адмін-панелі',
         'welcome_body'  => 'Оберіть розділ у бічній панелі, щоб почати.',
         'manage'        => 'Керування — :entity',
+    ],
+    'files' => [
+        'remove' => 'Видалити поточний файл',
+    ],
+    'row_actions' => [
+        'label' => 'Дії рядка',
     ],
     'actions' => 'Дії',
 ];

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace BlackParadise\LaravelAdmin\Http\Presenters\Json;
 
+use BlackParadise\CoreAdmin\Domain\Action\ActionResult;
+use BlackParadise\CoreAdmin\Domain\Contracts\Action\DownloadContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\EntityRecordContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Query\PaginatedResult;
+use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityKey;
 use BlackParadise\LaravelAdmin\Http\Presenters\EntityPresenterInterface;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -101,8 +104,31 @@ final class JsonEntityPresenter implements EntityPresenterInterface
         return response()->json(['message' => 'Validation failed.', 'errors' => $errors], 422);
     }
 
-    public function actionResult(string $message, ?string $rowId = null): Response
+    public function actionResult(ActionResult $result, EntityDefinitionContract $definition): Response
     {
-        return response()->json(['message' => $message, 'id' => $rowId]);
+        if ($result->download instanceof DownloadContract) {
+            $download = $result->download;
+            $segments = explode('/', str_replace('\\', '/', $download->filename()));
+            $filename = trim(end($segments));
+
+            return response()->streamDownload(
+                static function () use ($download): void {
+                    $download->stream();
+                },
+                $filename !== '' ? $filename : 'download',
+                ['Content-Type' => $download->mimeType()],
+            );
+        }
+
+        $body = [
+            'outcome'    => $result->outcome->value,
+            'message'    => $result->message,
+            'failedKeys' => array_map(static fn(EntityKey $key): int|string => $key->value, $result->failedKeys),
+        ];
+        if ($result->redirectUrl !== null) {
+            $body['redirect'] = $result->redirectUrl;
+        }
+
+        return response()->json($body);
     }
 }

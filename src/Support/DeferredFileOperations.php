@@ -87,6 +87,71 @@ final class DeferredFileOperations
         }
     }
 
+    /**
+     * Position mark for a nested write scope: how many uploads/deletions are recorded now.
+     *
+     * @return array{int, int}
+     */
+    public function mark(): array
+    {
+        return [count($this->uploads), count($this->deletions)];
+    }
+
+    /**
+     * A nested scope failed (its DB work was rolled back by a savepoint): compensate only what
+     * it recorded after the mark — delete its uploads, discard its deletions. Earlier ops stay.
+     *
+     * @param array{int, int} $mark
+     */
+    public function rollbackTo(array $mark): void
+    {
+        [$uploads, $deletions] = $mark;
+        $this->deletePaths(array_slice($this->uploads, $uploads));
+        $this->uploads   = array_slice($this->uploads, 0, $uploads);
+        $this->deletions = array_slice($this->deletions, 0, $deletions);
+    }
+
+    /**
+     * Move everything recorded after the mark out of this collector.
+     *
+     * @param array{int, int} $mark
+     * @return array{uploads: list<array{path: string, disk: ?string}>, deletions: list<array{path: string, disk: ?string}>}
+     */
+    public function takeSince(array $mark): array
+    {
+        [$uploads, $deletions] = $mark;
+        $taken = [
+            'uploads'   => array_slice($this->uploads, $uploads),
+            'deletions' => array_slice($this->deletions, $deletions),
+        ];
+        $this->uploads   = array_slice($this->uploads, 0, $uploads);
+        $this->deletions = array_slice($this->deletions, 0, $deletions);
+
+        return $taken;
+    }
+
+    /**
+     * @param array{uploads: list<array{path: string, disk: ?string}>, deletions: list<array{path: string, disk: ?string}>} $ops
+     */
+    public function absorb(array $ops): void
+    {
+        array_push($this->uploads, ...$ops['uploads']);
+        array_push($this->deletions, ...$ops['deletions']);
+    }
+
+    /**
+     * Detach everything recorded so far into a standalone collector (this one is emptied),
+     * so its commit can be deferred until a foreign DB transaction really commits.
+     */
+    public function detach(): self
+    {
+        $copy = new self($this->fileStorage);
+        $copy->absorb(['uploads' => $this->uploads, 'deletions' => $this->deletions]);
+        $this->reset();
+
+        return $copy;
+    }
+
     /** Outer commit succeeded: drop replaced/old files; keep uploads (now referenced). */
     public function commit(): void
     {

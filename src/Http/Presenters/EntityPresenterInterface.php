@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BlackParadise\LaravelAdmin\Http\Presenters;
 
+use BlackParadise\CoreAdmin\Domain\Action\ActionResult;
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\EntityRecordContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
 use BlackParadise\CoreAdmin\Domain\Query\PaginatedResult;
@@ -46,5 +47,9 @@ interface EntityPresenterInterface
     /** @param array<string, array<string>> $errors */
     public function validationError(array $errors): Response;
 
-    public function actionResult(string $message, ?string $rowId = null): Response;
+    /**
+     * @param EntityDefinitionContract $definition Passed for presenters that need entity context
+     *                                             (currently unused by the built-in presenters).
+     */
+    public function actionResult(ActionResult $result, EntityDefinitionContract $definition): Response;
 }

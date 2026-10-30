@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace BlackParadise\LaravelAdmin\Http\Requests;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
+use BlackParadise\CoreAdmin\Domain\ValueObjects\Capability;
 use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityKey;
 use BlackParadise\LaravelAdmin\Core\EntityDefinitionRegistry;
+use BlackParadise\LaravelAdmin\Http\Presenters\EntityPresenterInterface;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class EntityBulkDestroyRequest extends FormRequest
 {
@@ -16,6 +19,19 @@ final class EntityBulkDestroyRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Capability gate runs before `ids` validation: an entity that does not
+     * allow delete exposes no bulk-delete surface at all (404, never 422).
+     */
+    protected function prepareForValidation(): void
+    {
+        if (!$this->definition()->capabilities()->allows(Capability::Delete)) {
+            throw new HttpResponseException(
+                $this->container->make(EntityPresenterInterface::class)->notFound(),
+            );
+        }
     }
 
     /**

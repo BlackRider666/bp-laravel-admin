@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace BlackParadise\LaravelAdmin\Console;
 
+use BlackParadise\LaravelAdmin\Core\DefinitionValidator;
+use BlackParadise\LaravelAdmin\Core\EntityDefinitionRegistry;
 use BlackParadise\LaravelAdmin\EntityDefinition;
+use BlackParadise\LaravelAdmin\Support\Psr4ClassLocator;
 use Illuminate\Console\Command;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -50,10 +53,34 @@ final class CacheEntitiesCommand extends Command
         $classes = array_keys($classes);
         sort($classes);
 
+        $violations = $this->validateDiscovered($classes);
+        if ($violations !== []) {
+            $this->error(sprintf('%d definition violation(s); manifest NOT written:', count($violations)));
+            foreach ($violations as $violation) {
+                $this->line(sprintf('  [%s] %s', $violation['rule'], $violation['message']));
+            }
+
+            return self::FAILURE;
+        }
+
         $this->writeManifest($manifestPath, $classes);
         $this->info(sprintf('Cached %d entity definition(s) to %s', count($classes), $manifestPath));
 
         return self::SUCCESS;
+    }
+
+    /**
+     * @param list<class-string> $classes
+     * @return list<array{definition: string, subject: string, rule: string, message: string}>
+     */
+    private function validateDiscovered(array $classes): array
+    {
+        $registry = new EntityDefinitionRegistry();
+        foreach ($classes as $class) {
+            $registry->register($this->laravel->make($class));
+        }
+
+        return $this->laravel->make(DefinitionValidator::class)->validate($registry);
     }
 
     /**
@@ -77,7 +104,7 @@ final class CacheEntitiesCommand extends Command
             if ($real === false) {
                 continue;
             }
-            $class = $this->classFromPath($real);
+            $class = $this->laravel->make(Psr4ClassLocator::class)->classFromPath($real);
             if ($class === null) {
                 continue;
             }
@@ -90,99 +117,6 @@ final class CacheEntitiesCommand extends Command
             $found[] = $class;
         }
         return $found;
-    }
-
-    /**
-     * Best-effort PSR-4 path → FQCN resolver.
-     *
-     * Strategy:
-     *  1. Read composer.json psr-4 map; pick the longest prefix that contains
-     *     the file path. Strip prefix, replace separators with `\`, drop `.php`.
-     *  2. If that fails, fall back to the legacy `app/` → `App\` rule.
-     */
-    private function classFromPath(string $filePath): ?string
-    {
-        $byPsr4 = $this->classFromPsr4($filePath);
-        if ($byPsr4 !== null) {
-            return $byPsr4;
-        }
-
-        $appPath = realpath(app_path());
-        if ($appPath === false) {
-            return null;
-        }
-        if (!str_starts_with($filePath, $appPath . DIRECTORY_SEPARATOR)) {
-            return null;
-        }
-        $relative = ltrim(str_replace($appPath, '', $filePath), DIRECTORY_SEPARATOR);
-        $relative = str_replace(['/', '\\'], '\\', $relative);
-        return 'App\\' . substr($relative, 0, -4);
-    }
-
-    private function classFromPsr4(string $filePath): ?string
-    {
-        static $map = null;
-
-        if ($map === null) {
-            $map = $this->loadPsr4Map();
-        }
-
-        $best   = null;
-        $bestNs = '';
-        foreach ($map as $namespace => $dirs) {
-            foreach ($dirs as $dir) {
-                $real = realpath($dir);
-                if ($real === false) {
-                    continue;
-                }
-                $prefix = $real . DIRECTORY_SEPARATOR;
-                if (str_starts_with($filePath, $prefix) && strlen($real) > strlen($best ?? '')) {
-                    $best   = $real;
-                    $bestNs = $namespace;
-                }
-            }
-        }
-
-        if ($best === null) {
-            return null;
-        }
-
-        $relative = substr($filePath, strlen($best) + 1);
-        $relative = str_replace(['/', '\\'], '\\', $relative);
-        return rtrim($bestNs, '\\') . '\\' . substr($relative, 0, -4);
-    }
-
-    /**
-     * @return array<string, list<string>>
-     */
-    private function loadPsr4Map(): array
-    {
-        $composerPath = base_path('composer.json');
-        if (!is_file($composerPath)) {
-            return [];
-        }
-        $raw = file_get_contents($composerPath);
-        if ($raw === false) {
-            return [];
-        }
-        $decoded = json_decode($raw, true);
-        if (!is_array($decoded)) {
-            return [];
-        }
-        $psr4 = $decoded['autoload']['psr-4'] ?? [];
-        if (!is_array($psr4)) {
-            return [];
-        }
-        $normalized = [];
-        foreach ($psr4 as $namespace => $dirs) {
-            $dirs = (array) $dirs;
-            $absDirs = [];
-            foreach ($dirs as $dir) {
-                $absDirs[] = base_path((string) $dir);
-            }
-            $normalized[(string) $namespace] = $absDirs;
-        }
-        return $normalized;
     }
 
     /**

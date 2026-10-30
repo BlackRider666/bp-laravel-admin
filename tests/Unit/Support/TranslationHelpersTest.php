@@ -8,6 +8,7 @@ use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionCo
 use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
 use BlackParadise\CoreAdmin\Domain\Fields\EmbedStrategy;
 use BlackParadise\CoreAdmin\Domain\Validation\RuleSet;
+use BlackParadise\CoreAdmin\Domain\ValueObjects\EntityCapabilities;
 use BlackParadise\LaravelAdmin\Tests\TestCase;
 use Illuminate\Support\Facades\Lang;
 
@@ -206,6 +207,32 @@ final class TranslationHelpersTest extends TestCase
             public function searchFields(): array
             {
                 return [];
+            }
+
+            public function resolveName(): string
+            {
+                return 'stub';
+            }
+
+            public function capabilities(): EntityCapabilities
+            {
+                return EntityCapabilities::all();
+            }
+
+            /** @return array<mixed> */
+            public function filters(): array
+            {
+                return [];
+            }
+
+            public function repository(): null
+            {
+                return null;
+            }
+
+            public function mutator(): null
+            {
+                return null;
             }
         };
     }

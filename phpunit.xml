@@ -20,6 +20,13 @@
         </testsuite>
     </testsuites>
 
+    <groups>
+        <exclude>
+            <group>mysql</group>
+            <group>pgsql</group>
+        </exclude>
+    </groups>
+
     <source>
         <include>
             <directory>src</directory>

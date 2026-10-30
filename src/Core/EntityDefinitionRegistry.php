@@ -21,6 +21,9 @@ final class EntityDefinitionRegistry
     /** @var array<string, EntityDefinitionContract> */
     private array $definitions = [];
 
+    /** @var array<class-string, string> definition class => entity name */
+    private array $namesByClass = [];
+
     /**
      * Register an entity definition.
      * If a definition with the same name already exists it is overwritten.
@@ -28,7 +31,25 @@ final class EntityDefinitionRegistry
      */
     public function register(EntityDefinition $definition): void
     {
-        $this->definitions[$definition->resolveName()] = $definition;
+        $name = $definition->resolveName();
+        $this->definitions[$name] = $definition;
+        $this->namesByClass[$definition::class] = $name;
+    }
+
+    /**
+     * Retrieve a registered definition by its class-string (no instantiation, no name derivation).
+     *
+     * @throws InvalidArgumentException when no definition of that class is registered.
+     */
+    public function forClass(string $class): EntityDefinitionContract
+    {
+        return $this->forClassOrNull($class)
+            ?? throw new InvalidArgumentException("EntityDefinition class '{$class}' not registered.");
+    }
+
+    public function forClassOrNull(string $class): ?EntityDefinitionContract
+    {
+        return isset($this->namesByClass[$class]) ? $this->definitions[$this->namesByClass[$class]] : null;
     }
 
     /**

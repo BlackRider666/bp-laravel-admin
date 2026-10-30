@@ -9,6 +9,7 @@ use BlackParadise\CoreAdmin\Domain\Contracts\Fields\FieldContract;
 use BlackParadise\CoreAdmin\Domain\Fields\MorphToField;
 use BlackParadise\LaravelAdmin\Core\EntityDefinitionRegistry;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 
 /**
  * Shared request for store/update.
@@ -65,7 +66,25 @@ final class EntityWriteRequest extends FormRequest
             }
         }
 
-        return $this->only($allowed);
+        // `{field}__clear` removal flags of file-bearing fields (validated by the core RuleBuilder).
+        $clearFlags = [];
+        foreach ($definition->fields() as $f) {
+            if (in_array($f->type(), ['file', 'image', 'morph_file'], true)) {
+                $clearFlags[] = $f->name() . '__clear';
+            }
+        }
+
+        $input = $this->only([...$allowed, ...$clearFlags]);
+
+        // A newly uploaded file wins over `__clear` — drop the flag.
+        foreach ($definition->fields() as $f) {
+            if (in_array($f->type(), ['file', 'image', 'morph_file'], true)
+                && ($input[$f->name()] ?? null) instanceof UploadedFile) {
+                unset($input[$f->name() . '__clear']);
+            }
+        }
+
+        return $input;
     }
 
     public function definition(): EntityDefinitionContract

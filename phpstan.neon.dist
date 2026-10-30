@@ -12,3 +12,8 @@ parameters:
     excludePaths:
         - tests/Architecture/*
     tmpDir: .phpstan-cache
+    ignoreErrors:
+        # Opt-in trait for host applications' models; only consumed outside this package.
+        -
+            identifier: trait.unused
+            path: src/Infrastructure/Persistence/Concerns/AtomicSoftDeletes.php

@@ -55,7 +55,7 @@ final class CoverageChecker
         foreach ($config as $layer => $cfg) {
             if (!is_array($cfg) || !isset($cfg['path'], $cfg['min']) || !is_string($cfg['path']) || !is_numeric($cfg['min'])) {
                 throw new \InvalidArgumentException(
-                    "Thresholds JSON entry '$layer' missing required keys 'path' (string) and 'min' (numeric)."
+                    "Thresholds JSON entry '$layer' missing required keys 'path' (string) and 'min' (numeric).",
                 );
             }
 
@@ -78,8 +78,16 @@ final class CoverageChecker
 
             $pct = ($totalCovered / $totalStmts) * 100.0;
             $status = $pct >= $min ? 'OK ' : 'FAIL';
-            $lines[] = sprintf('[%s] %-20s %.2f%% (min %.2f%%, %d/%d stmts, path=%s)',
-                $status, $layer, $pct, $min, $totalCovered, $totalStmts, $cfg['path']);
+            $lines[] = sprintf(
+                '[%s] %-20s %.2f%% (min %.2f%%, %d/%d stmts, path=%s)',
+                $status,
+                $layer,
+                $pct,
+                $min,
+                $totalCovered,
+                $totalStmts,
+                $cfg['path'],
+            );
             if ($pct < $min) {
                 $failed = true;
             }
@@ -121,7 +129,7 @@ if (PHP_SAPI === 'cli' && isset($argv[0]) && realpath((string) $argv[0]) === __F
     try {
         $result = $checker->check($checker->collectFileCoverage($xml), $config, $packageDir);
     } catch (\InvalidArgumentException $e) {
-        fwrite(STDERR, "Error: " . $e->getMessage() . "\n");
+        fwrite(STDERR, 'Error: ' . $e->getMessage() . "\n");
         exit(2);
     }
 

@@ -6,7 +6,9 @@ namespace BlackParadise\LaravelAdmin\Support;
 
 use BlackParadise\CoreAdmin\Domain\Contracts\Entity\EntityRecordContract;
 use BlackParadise\CoreAdmin\Domain\Contracts\EntityDefinition\EntityDefinitionContract;
+use BlackParadise\CoreAdmin\Domain\Contracts\Persistence\EmbeddedChildWriterContract;
 use BlackParadise\CoreAdmin\Domain\Fields\Base\AbstractRelationField;
+use BlackParadise\LaravelAdmin\Exceptions\ModelLessDefinitionException;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -20,9 +22,9 @@ use Illuminate\Database\Eloquent\Model;
  * keeps only fields the embedded definition declares, which would strip an
  * injected FK column the author has no reason to expose as a form field. It
  * also mirrors how hasMany-embed children are persisted by
- * {@see \BlackParadise\LaravelAdmin\Infrastructure\Persistence\RelationWriter}.
+ * the hasMany persister ({@see \BlackParadise\LaravelAdmin\Infrastructure\Persistence\FieldPersisters\HasManyPersister}).
  */
-final readonly class EmbeddedChildWriter
+final readonly class EmbeddedChildWriter implements EmbeddedChildWriterContract
 {
     /**
      * @param array<string, array{field: AbstractRelationField, payload: array<string, mixed>}> $defer
@@ -41,7 +43,7 @@ final readonly class EmbeddedChildWriter
         // FK on the child when writing through the relation; a full SELECT is
         // wasteful because the host record was just created / updated by the caller.
         /** @var Model $hostModel */
-        $hostModel = resolve($hostDefinition->modelClass())
+        $hostModel = resolve($hostDefinition->modelClass() ?? throw ModelLessDefinitionException::forDefinition($hostDefinition))
             ->newInstance()
             ->forceFill([$hostDefinition->keyField() => $host->id()]);
         $hostModel->exists = true;
